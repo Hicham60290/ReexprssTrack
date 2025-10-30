@@ -1,4 +1,4 @@
-import { useQuery } from '@tantml:react-query'
+import { useQuery } from '@tanstack/react-query'
 import { FileText } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card'
 import { Badge } from '@/shared/components/ui/Badge'
