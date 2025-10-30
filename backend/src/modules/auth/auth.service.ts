@@ -1,487 +1,370 @@
-// src/modules/auth/auth.service.ts
-
-import { FastifyRequest } from 'fastify'
-import bcrypt from 'bcryptjs'
-import { prisma } from '../../common/database/prisma.js'
-import { redis } from '../../common/cache/redis.js'
-import { BadRequestError, UnauthorizedError } from '../../common/errors/index.js'
-import type { RegisterDto, LoginDto, TokenPair } from './auth.dto.js'
+import { prisma } from '@common/database/prisma.client.js';
+import { cacheService } from '@common/cache/redis.client.js';
+import { hashPassword, verifyPassword, generateRandomString, generateReferenceCode } from '@common/utils/helpers.js';
+import { queueService } from '@common/queue/bullmq.client.js';
+import { config } from '@config/index.js';
+import { UnauthorizedError, ConflictError, NotFoundError } from '@common/errors/custom-errors.js';
+import type { LoginInput, RegisterInput } from './auth.schemas.js';
+import jwt from 'jsonwebtoken';
 
 export class AuthService {
   /**
-   * Inscription d'un nouvel utilisateur
+   * Register a new user
    */
-  async register(data: RegisterDto): Promise<{ user: any; tokens: TokenPair }> {
-    // Vérifier si l'email existe déjà
+  async register(data: RegisterInput) {
+    // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email: data.email }
-    })
+      where: { email: data.email },
+    });
 
     if (existingUser) {
-      throw new BadRequestError('Cet email est déjà utilisé')
+      throw new ConflictError('User with this email already exists');
     }
 
-    // Hash du mot de passe
-    const passwordHash = await bcrypt.hash(data.password, 12)
+    // Hash password
+    const passwordHash = await hashPassword(data.password);
 
-    // Créer l'utilisateur et son profil en transaction
+    // Generate unique reference code for French address
+    const referenceCode = generateReferenceCode();
+
+    // Create user and profile in transaction
     const user = await prisma.user.create({
       data: {
         email: data.email,
         passwordHash,
+        role: 'USER',
+        emailVerified: false,
         profile: {
           create: {
             firstName: data.firstName,
             lastName: data.lastName,
-            phone: data.phone,
-            address: data.address,
-            postalCode: data.postalCode,
-            city: data.city,
-            territory: data.territory
-          }
+          },
         },
         frenchAddresses: {
           create: {
             addressLine1: '12 Rue de la Réexpédition',
-            addressLine2: `Casier ${this.generateCasierNumber()}`,
+            addressLine2: `Casier ${referenceCode.substring(7)}`,
             postalCode: '75001',
             city: 'Paris',
-            referenceCode: await this.generateReferenceCode(data.email)
-          }
-        }
+            referenceCode,
+            isActive: true,
+          },
+        },
       },
       include: {
         profile: true,
-        frenchAddresses: true
-      }
-    })
+        frenchAddresses: true,
+      },
+    });
 
-    // Générer les tokens
-    const tokens = await this.generateTokenPair(user.id, user.role)
+    // Generate verification token
+    const verificationToken = generateRandomString(32);
+    await cacheService.set(
+      `email-verification:${verificationToken}`,
+      { userId: user.id, email: user.email },
+      3600 * 24 // 24 hours
+    );
 
-    // Log d'audit
-    await this.createAuditLog({
-      userId: user.id,
-      action: 'USER_REGISTERED',
-      metadata: { email: user.email }
-    })
+    // Send verification email
+    await queueService.sendEmail({
+      to: user.email,
+      subject: 'Verify your ReExpressTrack account',
+      html: `
+        <h1>Welcome to ReExpressTrack!</h1>
+        <p>Please verify your email address by clicking the link below:</p>
+        <a href="${config.frontend.url}/verify-email?token=${verificationToken}">Verify Email</a>
+        <p>This link will expire in 24 hours.</p>
+      `,
+    });
+
+    // Generate tokens
+    const tokens = await this.generateTokens(user.id, user.email, user.role);
+
+    // Log registration
+    await prisma.auditLog.create({
+      data: {
+        userId: user.id,
+        action: 'USER_REGISTERED',
+        resourceType: 'USER',
+        resourceId: user.id,
+      },
+    });
 
     return {
-      user: this.sanitizeUser(user),
-      tokens
-    }
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        emailVerified: user.emailVerified,
+        profile: user.profile,
+        frenchAddresses: user.frenchAddresses,
+      },
+      ...tokens,
+    };
   }
 
   /**
-   * Connexion d'un utilisateur
+   * Login user
    */
-  async login(data: LoginDto): Promise<{ user: any; tokens: TokenPair }> {
-    // Trouver l'utilisateur
+  async login(data: LoginInput) {
+    // Find user
     const user = await prisma.user.findUnique({
       where: { email: data.email },
       include: {
         profile: true,
         frenchAddresses: {
           where: { isActive: true },
-          take: 1
-        }
-      }
-    })
+        },
+      },
+    });
 
     if (!user) {
-      throw new UnauthorizedError('Email ou mot de passe incorrect')
+      throw new UnauthorizedError('Invalid email or password');
     }
 
-    // Vérifier le mot de passe
-    const isPasswordValid = await bcrypt.compare(data.password, user.passwordHash)
+    // Verify password
+    const isValidPassword = await verifyPassword(data.password, user.passwordHash);
 
-    if (!isPasswordValid) {
-      throw new UnauthorizedError('Email ou mot de passe incorrect')
+    if (!isValidPassword) {
+      throw new UnauthorizedError('Invalid email or password');
     }
 
-    // Générer les tokens
-    const tokens = await this.generateTokenPair(user.id, user.role)
+    // Generate tokens
+    const tokens = await this.generateTokens(user.id, user.email, user.role);
 
-    // Log d'audit
-    await this.createAuditLog({
-      userId: user.id,
-      action: 'USER_LOGIN',
-      metadata: { email: user.email }
-    })
+    // Log login
+    await prisma.auditLog.create({
+      data: {
+        userId: user.id,
+        action: 'USER_LOGIN',
+        resourceType: 'USER',
+        resourceId: user.id,
+      },
+    });
 
     return {
-      user: this.sanitizeUser(user),
-      tokens
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        emailVerified: user.emailVerified,
+        profile: user.profile,
+        frenchAddresses: user.frenchAddresses,
+      },
+      ...tokens,
+    };
+  }
+
+  /**
+   * Refresh access token
+   */
+  async refreshToken(refreshToken: string) {
+    try {
+      // Verify refresh token
+      const decoded = jwt.verify(refreshToken, config.jwt.refreshSecret) as {
+        id: string;
+        email: string;
+        role: string;
+      };
+
+      // Check if refresh token is blacklisted
+      const isBlacklisted = await cacheService.exists(`blacklist:${refreshToken}`);
+      if (isBlacklisted) {
+        throw new UnauthorizedError('Token has been revoked');
+      }
+
+      // Check if token exists in Redis
+      const storedToken = await cacheService.get<string>(`refresh-token:${decoded.id}`);
+      if (storedToken !== refreshToken) {
+        throw new UnauthorizedError('Invalid refresh token');
+      }
+
+      // Generate new tokens
+      const tokens = await this.generateTokens(decoded.id, decoded.email, decoded.role);
+
+      // Blacklist old refresh token
+      await cacheService.set(`blacklist:${refreshToken}`, true, 7 * 24 * 3600);
+
+      return tokens;
+    } catch (error) {
+      throw new UnauthorizedError('Invalid or expired refresh token');
     }
   }
 
   /**
-   * Rafraîchir les tokens
+   * Logout user
    */
-  async refreshTokens(refreshToken: string): Promise<TokenPair> {
-    // Vérifier si le refresh token existe en Redis
-    const userId = await redis.get(`refresh_token:${refreshToken}`)
+  async logout(userId: string, refreshToken?: string) {
+    // Remove refresh token from Redis
+    await cacheService.del(`refresh-token:${userId}`);
 
-    if (!userId) {
-      throw new UnauthorizedError('Refresh token invalide ou expiré')
+    // Blacklist refresh token if provided
+    if (refreshToken) {
+      await cacheService.set(`blacklist:${refreshToken}`, true, 7 * 24 * 3600);
     }
 
-    // Récupérer l'utilisateur
+    // Log logout
+    await prisma.auditLog.create({
+      data: {
+        userId,
+        action: 'USER_LOGOUT',
+        resourceType: 'USER',
+        resourceId: userId,
+      },
+    });
+
+    return { success: true };
+  }
+
+  /**
+   * Verify email
+   */
+  async verifyEmail(token: string) {
+    const data = await cacheService.get<{ userId: string; email: string }>(
+      `email-verification:${token}`
+    );
+
+    if (!data) {
+      throw new NotFoundError('Invalid or expired verification token');
+    }
+
+    // Update user
+    await prisma.user.update({
+      where: { id: data.userId },
+      data: { emailVerified: true },
+    });
+
+    // Delete token
+    await cacheService.del(`email-verification:${token}`);
+
+    return { success: true };
+  }
+
+  /**
+   * Request password reset
+   */
+  async forgotPassword(email: string) {
     const user = await prisma.user.findUnique({
-      where: { id: userId }
-    })
+      where: { email },
+    });
 
+    // Always return success to prevent email enumeration
     if (!user) {
-      throw new UnauthorizedError('Utilisateur non trouvé')
+      return { success: true };
     }
 
-    // Supprimer l'ancien refresh token
-    await redis.del(`refresh_token:${refreshToken}`)
+    // Generate reset token
+    const resetToken = generateRandomString(32);
+    await cacheService.set(
+      `password-reset:${resetToken}`,
+      { userId: user.id, email: user.email },
+      3600 // 1 hour
+    );
 
-    // Générer de nouveaux tokens
-    return this.generateTokenPair(user.id, user.role)
+    // Send reset email
+    await queueService.sendEmail({
+      to: user.email,
+      subject: 'Reset your ReExpressTrack password',
+      html: `
+        <h1>Password Reset Request</h1>
+        <p>Click the link below to reset your password:</p>
+        <a href="${config.frontend.url}/reset-password?token=${resetToken}">Reset Password</a>
+        <p>This link will expire in 1 hour.</p>
+        <p>If you didn't request this, please ignore this email.</p>
+      `,
+    });
+
+    return { success: true };
   }
 
   /**
-   * Déconnexion
+   * Reset password
    */
-  async logout(refreshToken: string): Promise<void> {
-    // Supprimer le refresh token de Redis
-    await redis.del(`refresh_token:${refreshToken}`)
-  }
+  async resetPassword(token: string, newPassword: string) {
+    const data = await cacheService.get<{ userId: string; email: string }>(
+      `password-reset:${token}`
+    );
 
-  /**
-   * Générer une paire de tokens (access + refresh)
-   */
-  private async generateTokenPair(userId: string, role: string): Promise<TokenPair> {
-    const accessToken = this.app.jwt.sign(
-      { userId, role },
-      { expiresIn: '15m' }
-    )
-
-    const refreshToken = this.app.jwt.sign(
-      { userId, type: 'refresh' },
-      { expiresIn: '7d' }
-    )
-
-    // Stocker le refresh token dans Redis avec expiration de 7 jours
-    await redis.setex(
-      `refresh_token:${refreshToken}`,
-      7 * 24 * 60 * 60,
-      userId
-    )
-
-    return { accessToken, refreshToken }
-  }
-
-  /**
-   * Générer un numéro de casier unique
-   */
-  private generateCasierNumber(): string {
-    return `REEX-${Math.random().toString(36).substring(2, 10).toUpperCase()}`
-  }
-
-  /**
-   * Générer un code de référence unique basé sur l'email
-   */
-  private async generateReferenceCode(email: string): Promise<string> {
-    const prefix = email.substring(0, 3).toUpperCase()
-    const random = Math.random().toString(36).substring(2, 8).toUpperCase()
-    const code = `${prefix}-${random}`
-
-    // Vérifier l'unicité
-    const existing = await prisma.frenchAddress.findUnique({
-      where: { referenceCode: code }
-    })
-
-    if (existing) {
-      // Récursif si le code existe déjà
-      return this.generateReferenceCode(email)
+    if (!data) {
+      throw new NotFoundError('Invalid or expired reset token');
     }
 
-    return code
-  }
+    // Hash new password
+    const passwordHash = await hashPassword(newPassword);
 
-  /**
-   * Nettoyer les données utilisateur (retirer le hash du mot de passe)
-   */
-  private sanitizeUser(user: any) {
-    const { passwordHash, ...sanitized } = user
-    return sanitized
-  }
+    // Update user password
+    await prisma.user.update({
+      where: { id: data.userId },
+      data: { passwordHash },
+    });
 
-  /**
-   * Créer un log d'audit
-   */
-  private async createAuditLog(data: {
-    userId: string
-    action: string
-    metadata?: any
-  }) {
+    // Delete reset token
+    await cacheService.del(`password-reset:${token}`);
+
+    // Invalidate all refresh tokens
+    await cacheService.del(`refresh-token:${data.userId}`);
+
+    // Log password change
     await prisma.auditLog.create({
       data: {
         userId: data.userId,
-        action: data.action,
-        metadata: data.metadata
-      }
-    })
+        action: 'PASSWORD_RESET',
+        resourceType: 'USER',
+        resourceId: data.userId,
+      },
+    });
+
+    return { success: true };
   }
 
-  // Référence à l'instance Fastify (injectée)
-  constructor(private app: any) {}
-}
+  /**
+   * Generate access and refresh tokens
+   */
+  private async generateTokens(id: string, email: string, role: string) {
+    const payload = { id, email, role };
 
+    // Generate access token
+    const accessToken = jwt.sign(payload, config.jwt.secret, {
+      expiresIn: config.jwt.accessTokenExpiry,
+    });
 
-// src/modules/auth/auth.routes.ts
+    // Generate refresh token
+    const refreshToken = jwt.sign(payload, config.jwt.refreshSecret, {
+      expiresIn: config.jwt.refreshTokenExpiry,
+    });
 
-import { FastifyInstance } from 'fastify'
-import { AuthController } from './auth.controller.js'
-import { registerSchema, loginSchema, refreshSchema } from './auth.schema.js'
+    // Store refresh token in Redis
+    await cacheService.set(`refresh-token:${id}`, refreshToken, 7 * 24 * 3600); // 7 days
 
-export async function authRoutes(app: FastifyInstance) {
-  const controller = new AuthController(app)
-
-  // Inscription
-  app.post('/register', {
-    schema: registerSchema,
-    handler: controller.register.bind(controller)
-  })
-
-  // Connexion
-  app.post('/login', {
-    schema: loginSchema,
-    handler: controller.login.bind(controller)
-  })
-
-  // Rafraîchir les tokens
-  app.post('/refresh', {
-    schema: refreshSchema,
-    handler: controller.refresh.bind(controller)
-  })
-
-  // Déconnexion
-  app.post('/logout', {
-    onRequest: [app.authenticate],
-    handler: controller.logout.bind(controller)
-  })
-
-  // Obtenir le profil de l'utilisateur connecté
-  app.get('/me', {
-    onRequest: [app.authenticate],
-    handler: controller.me.bind(controller)
-  })
-}
-
-
-// src/modules/auth/auth.controller.ts
-
-import { FastifyRequest, FastifyReply } from 'fastify'
-import { AuthService } from './auth.service.js'
-import type { RegisterDto, LoginDto } from './auth.dto.js'
-
-export class AuthController {
-  private service: AuthService
-
-  constructor(private app: any) {
-    this.service = new AuthService(app)
+    return { accessToken, refreshToken };
   }
 
-  async register(
-    request: FastifyRequest<{ Body: RegisterDto }>,
-    reply: FastifyReply
-  ) {
-    const result = await this.service.register(request.body)
-    
-    return reply.status(201).send({
-      success: true,
-      message: 'Inscription réussie',
-      data: result
-    })
-  }
-
-  async login(
-    request: FastifyRequest<{ Body: LoginDto }>,
-    reply: FastifyReply
-  ) {
-    const result = await this.service.login(request.body)
-    
-    return reply.send({
-      success: true,
-      message: 'Connexion réussie',
-      data: result
-    })
-  }
-
-  async refresh(
-    request: FastifyRequest<{ Body: { refreshToken: string } }>,
-    reply: FastifyReply
-  ) {
-    const tokens = await this.service.refreshTokens(request.body.refreshToken)
-    
-    return reply.send({
-      success: true,
-      data: tokens
-    })
-  }
-
-  async logout(
-    request: FastifyRequest<{ Body: { refreshToken: string } }>,
-    reply: FastifyReply
-  ) {
-    await this.service.logout(request.body.refreshToken)
-    
-    return reply.send({
-      success: true,
-      message: 'Déconnexion réussie'
-    })
-  }
-
-  async me(request: any, reply: FastifyReply) {
-    const userId = request.user.userId
-
-    const user = await this.app.prisma.user.findUnique({
+  /**
+   * Get current user info
+   */
+  async getCurrentUser(userId: string) {
+    const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
         profile: true,
         frenchAddresses: {
-          where: { isActive: true }
-        }
-      }
-    })
+          where: { isActive: true },
+        },
+      },
+    });
 
-    return reply.send({
-      success: true,
-      data: user
-    })
-  }
-}
-
-
-// src/modules/auth/auth.dto.ts
-
-import { z } from 'zod'
-
-export const registerSchema = z.object({
-  email: z.string().email('Email invalide'),
-  password: z
-    .string()
-    .min(8, 'Le mot de passe doit contenir au moins 8 caractères')
-    .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-      'Le mot de passe doit contenir au moins une majuscule, une minuscule et un chiffre'
-    ),
-  firstName: z.string().min(2, 'Prénom trop court'),
-  lastName: z.string().min(2, 'Nom trop court'),
-  phone: z.string().optional(),
-  address: z.string().optional(),
-  postalCode: z.string().optional(),
-  city: z.string().optional(),
-  territory: z.string().optional()
-})
-
-export const loginSchema = z.object({
-  email: z.string().email('Email invalide'),
-  password: z.string().min(1, 'Mot de passe requis')
-})
-
-export type RegisterDto = z.infer<typeof registerSchema>
-export type LoginDto = z.infer<typeof loginSchema>
-
-export interface TokenPair {
-  accessToken: string
-  refreshToken: string
-}
-
-
-// src/modules/auth/auth.schema.ts (pour Swagger)
-
-export const registerSchema = {
-  description: 'Inscription d\'un nouvel utilisateur',
-  tags: ['Auth'],
-  body: {
-    type: 'object',
-    required: ['email', 'password', 'firstName', 'lastName'],
-    properties: {
-      email: { type: 'string', format: 'email' },
-      password: { type: 'string', minLength: 8 },
-      firstName: { type: 'string', minLength: 2 },
-      lastName: { type: 'string', minLength: 2 },
-      phone: { type: 'string' },
-      address: { type: 'string' },
-      postalCode: { type: 'string' },
-      city: { type: 'string' },
-      territory: { type: 'string' }
+    if (!user) {
+      throw new NotFoundError('User not found');
     }
-  },
-  response: {
-    201: {
-      description: 'Succès',
-      type: 'object',
-      properties: {
-        success: { type: 'boolean' },
-        message: { type: 'string' },
-        data: {
-          type: 'object',
-          properties: {
-            user: { type: 'object' },
-            tokens: {
-              type: 'object',
-              properties: {
-                accessToken: { type: 'string' },
-                refreshToken: { type: 'string' }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
 
-export const loginSchema = {
-  description: 'Connexion d\'un utilisateur',
-  tags: ['Auth'],
-  body: {
-    type: 'object',
-    required: ['email', 'password'],
-    properties: {
-      email: { type: 'string', format: 'email' },
-      password: { type: 'string' }
-    }
-  },
-  response: {
-    200: {
-      description: 'Succès',
-      type: 'object',
-      properties: {
-        success: { type: 'boolean' },
-        message: { type: 'string' },
-        data: {
-          type: 'object',
-          properties: {
-            user: { type: 'object' },
-            tokens: {
-              type: 'object',
-              properties: {
-                accessToken: { type: 'string' },
-                refreshToken: { type: 'string' }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-export const refreshSchema = {
-  description: 'Rafraîchir les tokens',
-  tags: ['Auth'],
-  body: {
-    type: 'object',
-    required: ['refreshToken'],
-    properties: {
-      refreshToken: { type: 'string' }
-    }
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      emailVerified: user.emailVerified,
+      profile: user.profile,
+      frenchAddresses: user.frenchAddresses,
+      createdAt: user.createdAt,
+    };
   }
 }
