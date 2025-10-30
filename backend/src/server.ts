@@ -14,13 +14,13 @@ import { redis } from './common/cache/redis.client.js';
 import { initMinIO } from './common/storage/minio.client.js';
 import { errorHandler } from './common/middleware/error.middleware.js';
 
-// Import routes (will be created next)
-// import { authRoutes } from './modules/auth/auth.routes.js';
-// import { usersRoutes } from './modules/users/users.routes.js';
-// import { packagesRoutes } from './modules/packages/packages.routes.js';
-// import { quotesRoutes } from './modules/quotes/quotes.routes.js';
-// import { paymentsRoutes } from './modules/payments/payments.routes.js';
-// import { adminRoutes } from './modules/admin/admin.routes.js';
+// Import routes
+import { authRoutes } from './modules/auth/auth.routes.js';
+import { usersRoutes } from './modules/users/users.routes.js';
+import { packagesRoutes } from './modules/packages/packages.routes.js';
+import { quotesRoutes } from './modules/quotes/quotes.routes.js';
+import { paymentsRoutes } from './modules/payments/payments.routes.js';
+import { adminRoutes } from './modules/admin/admin.routes.js';
 // import { supportRoutes } from './modules/support/support.routes.js';
 
 async function buildServer() {
@@ -209,26 +209,26 @@ async function buildServer() {
   // ============================================
 
   await app.register(async (api) => {
-    // TODO: Register routes when modules are created
-    // await api.register(authRoutes, { prefix: '/auth' });
-    // await api.register(usersRoutes, { prefix: '/users' });
-    // await api.register(packagesRoutes, { prefix: '/packages' });
-    // await api.register(quotesRoutes, { prefix: '/quotes' });
-    // await api.register(paymentsRoutes, { prefix: '/payments' });
-    // await api.register(adminRoutes, { prefix: '/admin' });
+    // Register all API routes
+    await api.register(authRoutes, { prefix: '/auth' });
+    await api.register(usersRoutes, { prefix: '/users' });
+    await api.register(packagesRoutes, { prefix: '/packages' });
+    await api.register(quotesRoutes, { prefix: '/quotes' });
+    await api.register(paymentsRoutes, { prefix: '/payments' });
+    await api.register(adminRoutes, { prefix: '/admin' });
     // await api.register(supportRoutes, { prefix: '/support' });
 
-    // Temporary placeholder route
+    // API status route
     api.get('/status', async () => {
       return {
         message: 'API v1 is ready',
         modules: {
-          auth: 'pending',
-          users: 'pending',
-          packages: 'pending',
-          quotes: 'pending',
-          payments: 'pending',
-          admin: 'pending',
+          auth: 'active',
+          users: 'active',
+          packages: 'active',
+          quotes: 'active',
+          payments: 'active',
+          admin: 'active',
           support: 'pending',
         },
       };
