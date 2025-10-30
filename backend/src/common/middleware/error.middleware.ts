@@ -3,6 +3,9 @@ import { AppError } from '@common/errors/custom-errors.js';
 import { logger } from '@common/utils/logger.js';
 import { ZodError } from 'zod';
 
+// Re-export AppError for convenience
+export { AppError };
+
 export async function errorHandler(
   error: FastifyError | AppError | Error,
   request: FastifyRequest,
