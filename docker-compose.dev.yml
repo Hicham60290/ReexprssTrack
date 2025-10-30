@@ -1,0 +1,256 @@
+version: '3.8'
+
+# ============================================
+# DOCKER COMPOSE POUR DÉVELOPPEMENT
+# ============================================
+# 
+# Ce fichier est optimisé pour le développement:
+# - Hot reload (backend & frontend)
+# - Volumes montés pour le code source
+# - Ports exposés pour le débogage
+# - Logs détaillés
+#
+# Usage:
+#   docker-compose -f docker-compose.dev.yml up
+#
+
+services:
+  # ===========================================
+  # POSTGRESQL DATABASE
+  # ===========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: reexpresstrack_postgres_dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: reexpresstrack_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    networks:
+      - reexpresstrack_dev_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ===========================================
+  # REDIS CACHE
+  # ===========================================
+  redis:
+    image: redis:7-alpine
+    container_name: reexpresstrack_redis_dev
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - reexpresstrack_dev_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ===========================================
+  # MINIO (S3-compatible Storage)
+  # ===========================================
+  minio:
+    image: minio/minio:latest
+    container_name: reexpresstrack_minio_dev
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_dev_data:/data
+    networks:
+      - reexpresstrack_dev_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # ===========================================
+  # BACKEND API (Mode Développement)
+  # ===========================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: reexpresstrack_backend_dev
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/reexpresstrack_dev
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      JWT_SECRET: dev-secret-change-in-production
+      JWT_REFRESH_SECRET: dev-refresh-secret-change-in-production
+    ports:
+      - "3000:3000"
+      - "9229:9229"  # Port pour le débogage Node.js
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+      # Monter le code source pour hot reload
+      - ./backend/src:/app/src:ro
+      - ./backend/prisma:/app/prisma:ro
+      - ./backend/package.json:/app/package.json:ro
+      # Volume pour node_modules (ne pas écraser)
+      - backend_node_modules:/app/node_modules
+    networks:
+      - reexpresstrack_dev_network
+    command: npm run dev
+
+  # ===========================================
+  # FRONTEND (Mode Développement)
+  # ===========================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: reexpresstrack_frontend_dev
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://localhost:3000/api/v1
+      VITE_WS_URL: ws://localhost:3000
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    volumes:
+      # Monter le code source pour hot reload
+      - ./frontend/src:/app/src:ro
+      - ./frontend/public:/app/public:ro
+      - ./frontend/index.html:/app/index.html:ro
+      - ./frontend/package.json:/app/package.json:ro
+      - ./frontend/vite.config.ts:/app/vite.config.ts:ro
+      - ./frontend/tsconfig.json:/app/tsconfig.json:ro
+      - ./frontend/tailwind.config.ts:/app/tailwind.config.ts:ro
+      # Volume pour node_modules
+      - frontend_node_modules:/app/node_modules
+    networks:
+      - reexpresstrack_dev_network
+    command: npm run dev -- --host 0.0.0.0
+
+  # ===========================================
+  # ADMINER (Database Management)
+  # ===========================================
+  adminer:
+    image: adminer:latest
+    container_name: reexpresstrack_adminer_dev
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+      ADMINER_DESIGN: dracula
+    depends_on:
+      - postgres
+    networks:
+      - reexpresstrack_dev_network
+
+  # ===========================================
+  # REDIS COMMANDER (Redis Management)
+  # ===========================================
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: reexpresstrack_redis_commander_dev
+    restart: unless-stopped
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - reexpresstrack_dev_network
+
+  # ===========================================
+  # MAILHOG (Email Testing)
+  # ===========================================
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: reexpresstrack_mailhog_dev
+    restart: unless-stopped
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    networks:
+      - reexpresstrack_dev_network
+
+# ===========================================
+# VOLUMES
+# ===========================================
+volumes:
+  postgres_dev_data:
+    driver: local
+  redis_dev_data:
+    driver: local
+  minio_dev_data:
+    driver: local
+  backend_node_modules:
+    driver: local
+  frontend_node_modules:
+    driver: local
+
+# ===========================================
+# NETWORKS
+# ===========================================
+networks:
+  reexpresstrack_dev_network:
+    driver: bridge
+
+
+# ===========================================
+# COMMANDES UTILES
+# ===========================================
+# 
+# Démarrer en mode développement:
+#   docker-compose -f docker-compose.dev.yml up
+#
+# Démarrer en arrière-plan:
+#   docker-compose -f docker-compose.dev.yml up -d
+#
+# Voir les logs:
+#   docker-compose -f docker-compose.dev.yml logs -f
+#
+# Arrêter:
+#   docker-compose -f docker-compose.dev.yml down
+#
+# Rebuild:
+#   docker-compose -f docker-compose.dev.yml up --build
+#
+# Accéder à un container:
+#   docker-compose -f docker-compose.dev.yml exec backend sh
+#
+# Services disponibles:
+#   Frontend:        http://localhost:5173
+#   Backend API:     http://localhost:3000
+#   API Docs:        http://localhost:3000/docs
+#   Adminer:         http://localhost:8080
+#   Redis Commander: http://localhost:8081
+#   MinIO Console:   http://localhost:9001
+#   MailHog:         http://localhost:8025
+#

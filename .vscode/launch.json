@@ -1,0 +1,143 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    // ============================================
+    // BACKEND - DEBUG
+    // ============================================
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "🚀 Backend: Debug",
+      "skipFiles": ["<node_internals>/**"],
+      "program": "${workspaceFolder}/backend/src/server.ts",
+      "cwd": "${workspaceFolder}/backend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "restart": true,
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "sourceMaps": true,
+      "outFiles": ["${workspaceFolder}/backend/dist/**/*.js"]
+    },
+
+    // ============================================
+    // BACKEND - ATTACH TO DOCKER
+    // ============================================
+    {
+      "type": "node",
+      "request": "attach",
+      "name": "🐳 Backend: Attach Docker",
+      "port": 9229,
+      "address": "localhost",
+      "restart": true,
+      "sourceMaps": true,
+      "localRoot": "${workspaceFolder}/backend",
+      "remoteRoot": "/app",
+      "skipFiles": ["<node_internals>/**"]
+    },
+
+    // ============================================
+    // FRONTEND - CHROME DEBUG
+    // ============================================
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "🌐 Frontend: Chrome",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/frontend/src",
+      "sourceMaps": true,
+      "sourceMapPathOverrides": {
+        "webpack:///src/*": "${webRoot}/*"
+      }
+    },
+
+    // ============================================
+    // FRONTEND - EDGE DEBUG
+    // ============================================
+    {
+      "type": "msedge",
+      "request": "launch",
+      "name": "🌐 Frontend: Edge",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/frontend/src",
+      "sourceMaps": true
+    },
+
+    // ============================================
+    // TESTS - BACKEND
+    // ============================================
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "🧪 Backend: Tests",
+      "cwd": "${workspaceFolder}/backend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["test"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+
+    // ============================================
+    // TESTS - FRONTEND
+    // ============================================
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "🧪 Frontend: Tests",
+      "cwd": "${workspaceFolder}/frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["test"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+
+    // ============================================
+    // PRISMA STUDIO
+    // ============================================
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "🗄️ Prisma Studio",
+      "cwd": "${workspaceFolder}/backend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "prisma:studio"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    }
+  ],
+
+  // ============================================
+  // COMPOUNDS (Lancer plusieurs configurations)
+  // ============================================
+  "compounds": [
+    {
+      "name": "🚀 Full Stack: Debug",
+      "configurations": [
+        "🚀 Backend: Debug",
+        "🌐 Frontend: Chrome"
+      ],
+      "stopAll": true,
+      "presentation": {
+        "hidden": false,
+        "group": "debug",
+        "order": 1
+      }
+    },
+    {
+      "name": "🧪 Full Stack: Tests",
+      "configurations": [
+        "🧪 Backend: Tests",
+        "🧪 Frontend: Tests"
+      ],
+      "stopAll": true,
+      "presentation": {
+        "hidden": false,
+        "group": "test",
+        "order": 2
+      }
+    }
+  ]
+}
