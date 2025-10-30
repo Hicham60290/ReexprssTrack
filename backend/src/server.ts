@@ -1,471 +1,329 @@
-// src/server.ts
+import Fastify from 'fastify';
+import cors from '@fastify/cors';
+import helmet from '@fastify/helmet';
+import jwt from '@fastify/jwt';
+import rateLimit from '@fastify/rate-limit';
+import multipart from '@fastify/multipart';
+import swagger from '@fastify/swagger';
+import swaggerUi from '@fastify/swagger-ui';
 
-import Fastify from 'fastify'
-import cors from '@fastify/cors'
-import helmet from '@fastify/helmet'
-import jwt from '@fastify/jwt'
-import rateLimit from '@fastify/rate-limit'
-import multipart from '@fastify/multipart'
-import swagger from '@fastify/swagger'
-import swaggerUi from '@fastify/swagger-ui'
+import { config } from './config/index.js';
+import { logger } from './common/utils/logger.js';
+import { prisma } from './common/database/prisma.client.js';
+import { redis } from './common/cache/redis.client.js';
+import { initMinIO } from './common/storage/minio.client.js';
+import { errorHandler } from './common/middleware/error.middleware.js';
 
-import { config } from './config/index.js'
-import { prisma } from './common/database/prisma.js'
-import { redis } from './common/cache/redis.js'
-import { errorHandler } from './common/errors/handler.js'
-import { authenticate } from './common/middleware/auth.js'
-
-// Importation des routes
-import { authRoutes } from './modules/auth/auth.routes.js'
-import { packagesRoutes } from './modules/packages/packages.routes.js'
-import { quotesRoutes } from './modules/quotes/quotes.routes.js'
-import { usersRoutes } from './modules/users/users.routes.js'
-import { adminRoutes } from './modules/admin/admin.routes.js'
+// Import routes (will be created next)
+// import { authRoutes } from './modules/auth/auth.routes.js';
+// import { usersRoutes } from './modules/users/users.routes.js';
+// import { packagesRoutes } from './modules/packages/packages.routes.js';
+// import { quotesRoutes } from './modules/quotes/quotes.routes.js';
+// import { paymentsRoutes } from './modules/payments/payments.routes.js';
+// import { adminRoutes } from './modules/admin/admin.routes.js';
+// import { supportRoutes } from './modules/support/support.routes.js';
 
 async function buildServer() {
   const app = Fastify({
-    logger: {
-      level: config.logLevel,
-      transport: {
-        target: 'pino-pretty',
-        options: {
-          translateTime: 'HH:MM:ss Z',
-          ignore: 'pid,hostname'
-        }
-      }
-    }
-  })
+    logger: logger,
+    trustProxy: true,
+    requestIdLogLabel: 'reqId',
+    disableRequestLogging: false,
+  });
 
-  // ===========================
+  // ============================================
   // PLUGINS
-  // ===========================
+  // ============================================
 
   // CORS
   await app.register(cors, {
-    origin: config.corsOrigin,
-    credentials: true
-  })
+    origin: config.cors.origin,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  });
 
-  // Helmet (Sécurité)
+  // Security Headers
   await app.register(helmet, {
-    contentSecurityPolicy: false
-  })
+    contentSecurityPolicy: config.isProduction
+      ? undefined
+      : false,
+  });
 
   // JWT
   await app.register(jwt, {
-    secret: config.jwtSecret,
+    secret: config.jwt.secret,
     sign: {
-      expiresIn: '15m'
-    }
-  })
+      expiresIn: config.jwt.accessTokenExpiry,
+    },
+  });
 
   // Rate Limiting
   await app.register(rateLimit, {
-    max: 100,
+    max: config.isProduction ? 100 : 1000,
     timeWindow: '1 minute',
-    redis: redis
-  })
+    redis: redis,
+    skipOnError: true,
+  });
 
-  // Multipart (Upload de fichiers)
+  // Multipart/Form-data
   await app.register(multipart, {
     limits: {
       fileSize: 10 * 1024 * 1024, // 10MB
-      files: 10
-    }
-  })
+      files: 10,
+      fields: 20,
+    },
+  });
 
-  // Swagger Documentation
-  if (config.nodeEnv === 'development') {
+  // Swagger Documentation (Development only)
+  if (config.isDevelopment) {
     await app.register(swagger, {
       swagger: {
         info: {
           title: 'ReExpressTrack API',
-          description: 'API Documentation pour ReExpressTrack',
-          version: '1.0.0'
+          description: 'API Documentation for ReExpressTrack - Package Forwarding Platform',
+          version: '1.0.0',
+          contact: {
+            name: 'API Support',
+            email: 'support@reexpresstrack.com',
+          },
         },
-        host: `localhost:${config.port}`,
+        host: `localhost:${config.server.port}`,
         schemes: ['http', 'https'],
         consumes: ['application/json', 'multipart/form-data'],
         produces: ['application/json'],
+        tags: [
+          { name: 'auth', description: 'Authentication endpoints' },
+          { name: 'users', description: 'User management' },
+          { name: 'packages', description: 'Package management' },
+          { name: 'quotes', description: 'Quote management' },
+          { name: 'payments', description: 'Payment processing' },
+          { name: 'admin', description: 'Admin operations' },
+          { name: 'support', description: 'Support tickets' },
+        ],
         securityDefinitions: {
           Bearer: {
             type: 'apiKey',
             name: 'Authorization',
-            in: 'header'
-          }
-        }
-      }
-    })
+            in: 'header',
+            description: 'Enter your Bearer token in the format: Bearer <token>',
+          },
+        },
+      },
+    });
 
     await app.register(swaggerUi, {
       routePrefix: '/docs',
       uiConfig: {
         docExpansion: 'list',
-        deepLinking: false
-      }
-    })
+        deepLinking: true,
+        displayRequestDuration: true,
+      },
+      staticCSP: true,
+    });
   }
 
-  // ===========================
-  // DÉCORATEURS
-  // ===========================
+  // ============================================
+  // DECORATORS
+  // ============================================
 
-  // Ajouter Prisma et Redis à l'instance Fastify
-  app.decorate('prisma', prisma)
-  app.decorate('redis', redis)
-  app.decorate('authenticate', authenticate)
+  app.decorate('prisma', prisma);
+  app.decorate('redis', redis);
 
-  // ===========================
+  // ============================================
   // HOOKS
-  // ===========================
+  // ============================================
 
-  // Hook de pré-validation pour logger les requêtes
-  app.addHook('preValidation', async (request, reply) => {
-    request.log.info({
-      url: request.url,
-      method: request.method,
-      ip: request.ip
-    })
-  })
-
-  // Hook pour ajouter le temps de traitement dans les headers
+  // Request logging
   app.addHook('onRequest', async (request, reply) => {
-    request.startTime = Date.now()
-  })
+    request.log.info({
+      method: request.method,
+      url: request.url,
+      ip: request.ip,
+      userAgent: request.headers['user-agent'],
+    }, 'Incoming request');
+  });
 
-  app.addHook('onSend', async (request, reply) => {
-    const duration = Date.now() - request.startTime
-    reply.header('X-Response-Time', `${duration}ms`)
-  })
+  // Response time header
+  app.addHook('onRequest', async (request) => {
+    (request as any).startTime = Date.now();
+  });
 
-  // ===========================
-  // ROUTES
-  // ===========================
+  app.addHook('onResponse', async (request, reply) => {
+    const duration = Date.now() - (request as any).startTime;
+    reply.header('X-Response-Time', `${duration}ms`);
 
-  // Health check
+    request.log.info({
+      method: request.method,
+      url: request.url,
+      statusCode: reply.statusCode,
+      duration: `${duration}ms`,
+    }, 'Request completed');
+  });
+
+  // ============================================
+  // HEALTH & INFO ROUTES
+  // ============================================
+
   app.get('/health', async () => {
-    return {
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime()
+    try {
+      // Check database
+      await prisma.$queryRaw`SELECT 1`;
+
+      // Check Redis
+      await redis.ping();
+
+      return {
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        environment: config.env,
+        services: {
+          database: 'connected',
+          redis: 'connected',
+        },
+      };
+    } catch (error) {
+      return {
+        status: 'unhealthy',
+        timestamp: new Date().toISOString(),
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
-  })
+  });
 
-  // Routes API v1
+  app.get('/', async () => {
+    return {
+      name: 'ReExpressTrack API',
+      version: '1.0.0',
+      environment: config.env,
+      documentation: config.isDevelopment ? '/docs' : null,
+      endpoints: {
+        health: '/health',
+        api: '/api/v1',
+      },
+    };
+  });
+
+  // ============================================
+  // API ROUTES (v1)
+  // ============================================
+
   await app.register(async (api) => {
-    // Auth
-    await api.register(authRoutes, { prefix: '/auth' })
+    // TODO: Register routes when modules are created
+    // await api.register(authRoutes, { prefix: '/auth' });
+    // await api.register(usersRoutes, { prefix: '/users' });
+    // await api.register(packagesRoutes, { prefix: '/packages' });
+    // await api.register(quotesRoutes, { prefix: '/quotes' });
+    // await api.register(paymentsRoutes, { prefix: '/payments' });
+    // await api.register(adminRoutes, { prefix: '/admin' });
+    // await api.register(supportRoutes, { prefix: '/support' });
 
-    // Packages
-    await api.register(packagesRoutes, { prefix: '/packages' })
+    // Temporary placeholder route
+    api.get('/status', async () => {
+      return {
+        message: 'API v1 is ready',
+        modules: {
+          auth: 'pending',
+          users: 'pending',
+          packages: 'pending',
+          quotes: 'pending',
+          payments: 'pending',
+          admin: 'pending',
+          support: 'pending',
+        },
+      };
+    });
+  }, { prefix: '/api/v1' });
 
-    // Quotes
-    await api.register(quotesRoutes, { prefix: '/quotes' })
-
-    // Users
-    await api.register(usersRoutes, { prefix: '/users' })
-
-    // Admin
-    await api.register(adminRoutes, { prefix: '/admin' })
-  }, { prefix: '/api/v1' })
-
+  // ============================================
   // 404 Handler
+  // ============================================
+
   app.setNotFoundHandler((request, reply) => {
     reply.status(404).send({
-      success: false,
-      error: 'Route non trouvée',
-      path: request.url
-    })
-  })
+      statusCode: 404,
+      error: 'Not Found',
+      message: `Route ${request.method} ${request.url} not found`,
+    });
+  });
 
-  // ===========================
+  // ============================================
   // ERROR HANDLER
-  // ===========================
+  // ============================================
 
-  app.setErrorHandler(errorHandler)
+  app.setErrorHandler(errorHandler);
 
-  return app
+  return app;
 }
+
+// ============================================
+// START SERVER
+// ============================================
 
 async function start() {
   try {
-    const app = await buildServer()
+    // Initialize MinIO
+    await initMinIO();
+    logger.info('MinIO initialized');
 
-    // Démarrage du serveur
+    // Build Fastify app
+    const app = await buildServer();
+
+    // Start server
     await app.listen({
-      port: config.port,
-      host: config.host
-    })
+      port: config.server.port,
+      host: config.server.host,
+    });
 
-    console.log(`
-    🚀 ReExpressTrack Backend démarré avec succès!
-    
-    📝 Environnement: ${config.nodeEnv}
-    🌐 Serveur: http://${config.host}:${config.port}
-    📚 Documentation: http://${config.host}:${config.port}/docs
-    💾 Database: Connected to PostgreSQL
+    logger.info(`
+    🚀 ReExpressTrack Backend Started Successfully!
+
+    📝 Environment: ${config.env}
+    🌐 Server: http://${config.server.host}:${config.server.port}
+    📚 API Documentation: http://${config.server.host}:${config.server.port}/docs
+    💾 Database: PostgreSQL Connected
     📮 Redis: Connected
-    `)
-
-    // Graceful shutdown
-    const signals = ['SIGINT', 'SIGTERM']
-    signals.forEach((signal) => {
-      process.on(signal, async () => {
-        console.log(`\n⏹️  Signal ${signal} reçu, arrêt du serveur...`)
-        
-        await app.close()
-        await prisma.$disconnect()
-        await redis.quit()
-        
-        console.log('👋 Serveur arrêté proprement')
-        process.exit(0)
-      })
-    })
+    📦 MinIO: Connected
+    `);
 
   } catch (error) {
-    console.error('❌ Erreur au démarrage du serveur:', error)
-    process.exit(1)
+    logger.error(error, 'Failed to start server');
+    process.exit(1);
   }
 }
 
-// Lancement du serveur
-start()
+// ============================================
+// GRACEFUL SHUTDOWN
+// ============================================
 
+const signals = ['SIGINT', 'SIGTERM', 'SIGUSR2'];
 
-// src/config/index.ts
+signals.forEach((signal) => {
+  process.on(signal, async () => {
+    logger.info(`Received ${signal}, shutting down gracefully...`);
 
-import dotenv from 'dotenv'
+    try {
+      await prisma.$disconnect();
+      await redis.quit();
+      logger.info('Connections closed successfully');
+      process.exit(0);
+    } catch (error) {
+      logger.error(error, 'Error during shutdown');
+      process.exit(1);
+    }
+  });
+});
 
-dotenv.config()
+// Handle uncaught errors
+process.on('uncaughtException', (error) => {
+  logger.fatal(error, 'Uncaught Exception');
+  process.exit(1);
+});
 
-export const config = {
-  // Environment
-  nodeEnv: process.env.NODE_ENV || 'development',
-  
-  // Server
-  host: process.env.HOST || '0.0.0.0',
-  port: parseInt(process.env.PORT || '3000', 10),
-  
-  // Database
-  databaseUrl: process.env.DATABASE_URL!,
-  
-  // Redis
-  redisHost: process.env.REDIS_HOST || 'localhost',
-  redisPort: parseInt(process.env.REDIS_PORT || '6379', 10),
-  redisPassword: process.env.REDIS_PASSWORD,
-  
-  // JWT
-  jwtSecret: process.env.JWT_SECRET!,
-  jwtRefreshSecret: process.env.JWT_REFRESH_SECRET!,
-  
-  // CORS
-  corsOrigin: process.env.CORS_ORIGIN || '*',
-  
-  // Stripe
-  stripeSecretKey: process.env.STRIPE_SECRET_KEY!,
-  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
-  
-  // MinIO (S3)
-  minioEndpoint: process.env.MINIO_ENDPOINT || 'localhost',
-  minioPort: parseInt(process.env.MINIO_PORT || '9000', 10),
-  minioAccessKey: process.env.MINIO_ACCESS_KEY!,
-  minioSecretKey: process.env.MINIO_SECRET_KEY!,
-  minioBucket: process.env.MINIO_BUCKET || 'reexpresstrack',
-  
-  // Email
-  smtpHost: process.env.SMTP_HOST!,
-  smtpPort: parseInt(process.env.SMTP_PORT || '587', 10),
-  smtpUser: process.env.SMTP_USER!,
-  smtpPass: process.env.SMTP_PASS!,
-  emailFrom: process.env.EMAIL_FROM || 'noreply@reexpresstrack.com',
-  
-  // 17Track API
-  track17ApiKey: process.env.TRACK17_API_KEY!,
-  
-  // Logging
-  logLevel: process.env.LOG_LEVEL || 'info'
-}
+process.on('unhandledRejection', (reason, promise) => {
+  logger.fatal({ reason, promise }, 'Unhandled Rejection');
+  process.exit(1);
+});
 
-// Validation de la configuration
-function validateConfig() {
-  const required = [
-    'DATABASE_URL',
-    'JWT_SECRET',
-    'JWT_REFRESH_SECRET',
-    'STRIPE_SECRET_KEY',
-    'MINIO_ACCESS_KEY',
-    'MINIO_SECRET_KEY',
-    'SMTP_HOST',
-    'SMTP_USER',
-    'SMTP_PASS',
-    'TRACK17_API_KEY'
-  ]
-
-  const missing = required.filter((key) => !process.env[key])
-
-  if (missing.length > 0) {
-    throw new Error(
-      `Configuration manquante: ${missing.join(', ')}\n` +
-      'Veuillez vérifier votre fichier .env'
-    )
-  }
-}
-
-validateConfig()
-
-
-// src/common/database/prisma.ts
-
-import { PrismaClient } from '@prisma/client'
-
-export const prisma = new PrismaClient({
-  log: process.env.NODE_ENV === 'development' 
-    ? ['query', 'error', 'warn'] 
-    : ['error'],
-  errorFormat: 'pretty'
-})
-
-
-// src/common/cache/redis.ts
-
-import Redis from 'ioredis'
-import { config } from '../../config/index.js'
-
-export const redis = new Redis({
-  host: config.redisHost,
-  port: config.redisPort,
-  password: config.redisPassword,
-  retryStrategy: (times) => {
-    const delay = Math.min(times * 50, 2000)
-    return delay
-  }
-})
-
-redis.on('connect', () => {
-  console.log('✅ Redis connecté')
-})
-
-redis.on('error', (err) => {
-  console.error('❌ Erreur Redis:', err)
-})
-
-
-// src/common/middleware/auth.ts
-
-import { FastifyRequest, FastifyReply } from 'fastify'
-import { UnauthorizedError } from '../errors/index.js'
-
-export async function authenticate(
-  request: FastifyRequest,
-  reply: FastifyReply
-) {
-  try {
-    await request.jwtVerify()
-  } catch (error) {
-    throw new UnauthorizedError('Token invalide ou expiré')
-  }
-}
-
-export async function requireAdmin(
-  request: any,
-  reply: FastifyReply
-) {
-  await authenticate(request, reply)
-  
-  if (request.user.role !== 'ADMIN' && request.user.role !== 'SUPER_ADMIN') {
-    throw new UnauthorizedError('Accès réservé aux administrateurs')
-  }
-}
-
-
-// src/common/errors/index.ts
-
-export class AppError extends Error {
-  constructor(
-    public message: string,
-    public statusCode: number = 500,
-    public code?: string
-  ) {
-    super(message)
-    this.name = this.constructor.name
-    Error.captureStackTrace(this, this.constructor)
-  }
-}
-
-export class BadRequestError extends AppError {
-  constructor(message: string, code?: string) {
-    super(message, 400, code)
-  }
-}
-
-export class UnauthorizedError extends AppError {
-  constructor(message: string = 'Non autorisé', code?: string) {
-    super(message, 401, code)
-  }
-}
-
-export class ForbiddenError extends AppError {
-  constructor(message: string = 'Accès interdit', code?: string) {
-    super(message, 403, code)
-  }
-}
-
-export class NotFoundError extends AppError {
-  constructor(message: string = 'Ressource non trouvée', code?: string) {
-    super(message, 404, code)
-  }
-}
-
-export class ConflictError extends AppError {
-  constructor(message: string, code?: string) {
-    super(message, 409, code)
-  }
-}
-
-
-// src/common/errors/handler.ts
-
-import { FastifyRequest, FastifyReply } from 'fastify'
-import { AppError } from './index.js'
-import { ZodError } from 'zod'
-
-export function errorHandler(
-  error: Error,
-  request: FastifyRequest,
-  reply: FastifyReply
-) {
-  // Log de l'erreur
-  request.log.error(error)
-
-  // Erreur personnalisée
-  if (error instanceof AppError) {
-    return reply.status(error.statusCode).send({
-      success: false,
-      error: error.message,
-      code: error.code
-    })
-  }
-
-  // Erreur de validation Zod
-  if (error instanceof ZodError) {
-    return reply.status(400).send({
-      success: false,
-      error: 'Validation échouée',
-      details: error.errors
-    })
-  }
-
-  // Erreur JWT
-  if (error.name === 'JsonWebTokenError') {
-    return reply.status(401).send({
-      success: false,
-      error: 'Token invalide'
-    })
-  }
-
-  // Erreur par défaut
-  return reply.status(500).send({
-    success: false,
-    error: 'Erreur interne du serveur'
-  })
-}
+// Start the server
+start();
