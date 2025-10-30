@@ -10,7 +10,7 @@ export default function ProfilePage() {
   const { data: user, isLoading } = useQuery<UserType>({
     queryKey: ['profile'],
     queryFn: async () => {
-      const response = await api.get('/users/me')
+      const response = await api.get('/auth/me')
       return response.data
     },
   })
