@@ -21,7 +21,7 @@ import { packagesRoutes } from './modules/packages/packages.routes.js';
 import { quotesRoutes } from './modules/quotes/quotes.routes.js';
 import { paymentsRoutes } from './modules/payments/payments.routes.js';
 import { adminRoutes } from './modules/admin/admin.routes.js';
-// import { supportRoutes } from './modules/support/support.routes.js';
+import { supportRoutes } from './modules/support/support.routes.js';
 
 async function buildServer() {
   const app = Fastify({
@@ -216,7 +216,7 @@ async function buildServer() {
     await api.register(quotesRoutes, { prefix: '/quotes' });
     await api.register(paymentsRoutes, { prefix: '/payments' });
     await api.register(adminRoutes, { prefix: '/admin' });
-    // await api.register(supportRoutes, { prefix: '/support' });
+    await api.register(supportRoutes, { prefix: '/support' });
 
     // API status route
     api.get('/status', async () => {
@@ -229,7 +229,7 @@ async function buildServer() {
           quotes: 'active',
           payments: 'active',
           admin: 'active',
-          support: 'pending',
+          support: 'active',
         },
       };
     });
