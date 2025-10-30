@@ -1,6 +1,7 @@
-import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Package } from 'lucide-react'
+import { ArrowLeft, Package, FileText } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card'
 import { Badge } from '@/shared/components/ui/Badge'
 import { Button } from '@/shared/components/ui/Button'
@@ -10,6 +11,8 @@ import { Package as PackageType } from '@/shared/types'
 
 export default function PackageDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const queryClient = useQueryClient()
+  const [quoteSuccess, setQuoteSuccess] = useState(false)
 
   const { data: pkg, isLoading } = useQuery<PackageType>({
     queryKey: ['package', id],
@@ -18,6 +21,18 @@ export default function PackageDetailPage() {
       return response.data
     },
     enabled: !!id,
+  })
+
+  const requestQuoteMutation = useMutation({
+    mutationFn: async () => {
+      const response = await api.post(`/quotes/${id}`)
+      return response.data
+    },
+    onSuccess: () => {
+      setQuoteSuccess(true)
+      queryClient.invalidateQueries({ queryKey: ['quotes'] })
+      setTimeout(() => setQuoteSuccess(false), 3000)
+    },
   })
 
   if (isLoading) {
@@ -52,10 +67,33 @@ export default function PackageDetailPage() {
           <h1 className="text-3xl font-bold">Détails du colis</h1>
           <p className="text-muted-foreground">{pkg.trackingNumber}</p>
         </div>
-        <Badge variant={pkg.status === 'DELIVERED' ? 'success' : 'default'}>
-          {pkg.status}
-        </Badge>
+        <div className="flex items-center gap-4">
+          <Badge variant={pkg.status === 'DELIVERED' ? 'success' : 'default'}>
+            {pkg.status}
+          </Badge>
+          {pkg.status === 'RECEIVED' && (
+            <Button
+              onClick={() => requestQuoteMutation.mutate()}
+              disabled={requestQuoteMutation.isPending}
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              {requestQuoteMutation.isPending ? 'Demande en cours...' : 'Demander des devis'}
+            </Button>
+          )}
+        </div>
       </div>
+
+      {quoteSuccess && (
+        <div className="rounded-md bg-green-500/10 p-4 text-green-600">
+          ✅ Demande de devis envoyée ! Consultez la page "Mes devis" pour voir les offres.
+        </div>
+      )}
+
+      {requestQuoteMutation.isError && (
+        <div className="rounded-md bg-destructive/10 p-4 text-destructive">
+          ❌ {(requestQuoteMutation.error as any)?.response?.data?.message || 'Une erreur est survenue'}
+        </div>
+      )}
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card>

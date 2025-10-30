@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { FileText } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card'
@@ -7,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import api from '@/shared/lib/api'
 import { formatCurrency, formatDate } from '@/shared/utils/format'
 import { Quote, PaginatedResponse } from '@/shared/types'
+import AcceptQuoteModal from '../components/AcceptQuoteModal'
 
 const getStatusBadgeVariant = (status: string) => {
   switch (status) {
@@ -22,6 +24,9 @@ const getStatusBadgeVariant = (status: string) => {
 }
 
 export default function QuotesPage() {
+  const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null)
+  const [isAcceptModalOpen, setIsAcceptModalOpen] = useState(false)
+
   const { data, isLoading } = useQuery<PaginatedResponse<Quote>>({
     queryKey: ['quotes'],
     queryFn: async () => {
@@ -30,12 +35,26 @@ export default function QuotesPage() {
     },
   })
 
+  const handleAcceptClick = (quote: Quote) => {
+    setSelectedQuote(quote)
+    setIsAcceptModalOpen(true)
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Mes devis</h1>
         <p className="text-muted-foreground">Consultez et gérez vos devis de transport</p>
       </div>
+
+      <AcceptQuoteModal
+        isOpen={isAcceptModalOpen}
+        onClose={() => {
+          setIsAcceptModalOpen(false)
+          setSelectedQuote(null)
+        }}
+        quote={selectedQuote}
+      />
 
       <Card>
         <CardHeader>
@@ -76,7 +95,11 @@ export default function QuotesPage() {
                     <TableCell>{formatDate(quote.expiresAt)}</TableCell>
                     <TableCell>
                       {quote.status === 'READY' && (
-                        <Button variant="default" size="sm">
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => handleAcceptClick(quote)}
+                        >
                           Accepter
                         </Button>
                       )}
