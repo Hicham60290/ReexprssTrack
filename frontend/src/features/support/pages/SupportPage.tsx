@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { MessageSquare, Plus } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card'
@@ -7,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import api from '@/shared/lib/api'
 import { formatDate } from '@/shared/utils/format'
 import { Ticket, PaginatedResponse } from '@/shared/types'
+import CreateTicketModal from '../components/CreateTicketModal'
 
 const getStatusBadgeVariant = (status: string) => {
   switch (status) {
@@ -35,6 +37,8 @@ const getPriorityBadgeVariant = (priority: string) => {
 }
 
 export default function SupportPage() {
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+
   const { data, isLoading } = useQuery<PaginatedResponse<Ticket>>({
     queryKey: ['tickets'],
     queryFn: async () => {
@@ -50,11 +54,16 @@ export default function SupportPage() {
           <h1 className="text-3xl font-bold">Support</h1>
           <p className="text-muted-foreground">Gérez vos tickets de support</p>
         </div>
-        <Button>
+        <Button onClick={() => setIsCreateModalOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Nouveau ticket
         </Button>
       </div>
+
+      <CreateTicketModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+      />
 
       <Card>
         <CardHeader>

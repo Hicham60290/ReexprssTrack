@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { Package, Plus } from 'lucide-react'
@@ -8,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import api from '@/shared/lib/api'
 import { formatDate, formatWeight } from '@/shared/utils/format'
 import { Package as PackageType, PaginatedResponse } from '@/shared/types'
+import CreatePackageModal from '../components/CreatePackageModal'
 
 const getStatusBadgeVariant = (status: string) => {
   switch (status) {
@@ -25,6 +27,8 @@ const getStatusBadgeVariant = (status: string) => {
 }
 
 export default function PackagesPage() {
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+
   const { data, isLoading } = useQuery<PaginatedResponse<PackageType>>({
     queryKey: ['packages'],
     queryFn: async () => {
@@ -40,11 +44,16 @@ export default function PackagesPage() {
           <h1 className="text-3xl font-bold">Mes colis</h1>
           <p className="text-muted-foreground">Gérez et suivez vos colis</p>
         </div>
-        <Button>
+        <Button onClick={() => setIsCreateModalOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Nouveau colis
         </Button>
       </div>
+
+      <CreatePackageModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+      />
 
       <Card>
         <CardHeader>
