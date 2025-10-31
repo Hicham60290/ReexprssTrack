@@ -112,12 +112,15 @@ export default function PublicFooter() {
         <div className="border-t border-gray-800 mt-8 pt-8 text-sm">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <p>&copy; {currentYear} ReExpressTrack. Tous droits réservés.</p>
-            <div className="flex space-x-6">
+            <div className="flex flex-wrap justify-center gap-4 md:gap-6">
               <Link to="/mentions-legales" className="hover:text-orange-500 transition-colors">
                 Mentions légales
               </Link>
-              <Link to="/confidentialite" className="hover:text-orange-500 transition-colors">
+              <Link to="/privacy" className="hover:text-orange-500 transition-colors">
                 Confidentialité
+              </Link>
+              <Link to="/cookie-policy" className="hover:text-orange-500 transition-colors">
+                🍪 Cookies
               </Link>
               <Link to="/cgv" className="hover:text-orange-500 transition-colors">
                 CGV

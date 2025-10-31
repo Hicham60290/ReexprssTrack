@@ -6,6 +6,9 @@ import AuthLayout from '@/shared/layouts/AuthLayout'
 import ClientLayout from '@/shared/layouts/ClientLayout'
 import AdminLayout from '@/shared/layouts/AdminLayout'
 
+// Components
+import CookieBanner from '@/components/CookieBanner'
+
 // Public Pages
 import HomePage from '@/features/public/pages/HomePage'
 import CalculatorPage from '@/features/public/pages/CalculatorPage'
@@ -15,6 +18,7 @@ import ContactPage from '@/features/public/pages/ContactPage'
 import HelpPage from '@/features/public/pages/HelpPage'
 import SubscriptionPage from '@/features/public/pages/SubscriptionPage'
 import LegalPage from '@/features/public/pages/LegalPage'
+import CookiePolicyPage from '@/features/public/pages/CookiePolicyPage'
 
 // Auth Pages
 import LoginPage from '@/features/auth/pages/LoginPage'
@@ -55,6 +59,7 @@ function App() {
 
   return (
     <Router>
+      <CookieBanner />
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<HomePage />} />
@@ -65,6 +70,8 @@ function App() {
         <Route path="/aide" element={<HelpPage />} />
         <Route path="/abonnement" element={<SubscriptionPage />} />
         <Route path="/mentions-legales" element={<LegalPage />} />
+        <Route path="/cookie-policy" element={<CookiePolicyPage />} />
+        <Route path="/privacy" element={<LegalPage />} />
 
         {/* Auth Routes */}
         <Route element={<AuthLayout />}>
