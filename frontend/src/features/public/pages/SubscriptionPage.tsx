@@ -97,7 +97,7 @@ export default function SubscriptionPage() {
     },
   ]
 
-  const getColorClasses = (color: string, popular: boolean) => {
+  const getColorClasses = (popular: boolean) => {
     if (popular) {
       return {
         border: 'border-2 border-orange-600',
@@ -133,7 +133,7 @@ export default function SubscriptionPage() {
           {/* Plans */}
           <div className="grid md:grid-cols-3 gap-8 mb-16">
             {plans.map((plan, index) => {
-              const colors = getColorClasses(plan.color, plan.popular)
+              const colors = getColorClasses(plan.popular)
               return (
                 <Card
                   key={index}

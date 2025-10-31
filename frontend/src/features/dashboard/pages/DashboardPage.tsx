@@ -11,9 +11,7 @@ import {
   Calculator,
   MessageCircle,
   ArrowRight,
-  Sparkles,
-  TrendingUp,
-  Clock
+  Sparkles
 } from 'lucide-react'
 import {
   LuxuryCard,
@@ -22,10 +20,9 @@ import {
   SectionHeader,
   AnimatedBackground
 } from '@/shared/components/ui/LuxuryComponents'
-import { Badge } from '@/shared/components/ui/Badge'
 import api from '@/shared/lib/api'
 import { useAuthStore } from '@/shared/stores/auth.store'
-import { formatCurrency, formatDateTime } from '@/shared/utils/format'
+import { formatCurrency, formatDate } from '@/shared/utils/format'
 
 interface DashboardStats {
   totalPackages: number
@@ -87,7 +84,7 @@ export default function DashboardPage() {
 
   const copyAddress = () => {
     if (!frenchAddress) return
-    const fullAddress = `${user?.profile?.firstName} ${user?.profile?.lastName}\n${frenchAddress.addressLine1}\n${frenchAddress.addressLine2}\n${frenchAddress.postalCode} ${frenchAddress.city}\nFrance`
+    const fullAddress = `${user?.firstName} ${user?.lastName}\n${frenchAddress.addressLine1}\n${frenchAddress.addressLine2}\n${frenchAddress.postalCode} ${frenchAddress.city}\nFrance`
     navigator.clipboard.writeText(fullAddress)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
@@ -115,7 +112,7 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-orange-600 via-purple-600 to-orange-600 bg-clip-text text-transparent mb-2 animate-shimmer">
-              Bienvenue, {user?.profile?.firstName || 'Cher client'} ✨
+              Bienvenue, {user?.firstName || 'Cher client'} ✨
             </h1>
             <p className="text-gray-600 text-lg">Gérez vos expéditions avec élégance</p>
           </div>
@@ -144,7 +141,7 @@ export default function DashboardPage() {
 
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border-2 border-amber-200 shadow-xl">
                 <div className="font-mono text-sm md:text-base text-gray-900 space-y-2">
-                  <div className="font-bold text-lg">{user?.profile?.firstName} {user?.profile?.lastName}</div>
+                  <div className="font-bold text-lg">{user?.firstName} {user?.lastName}</div>
                   <div>{frenchAddress.addressLine1}</div>
                   <div className="text-orange-600 font-bold text-lg">{frenchAddress.addressLine2}</div>
                   <div className="font-semibold">{frenchAddress.postalCode} {frenchAddress.city}</div>

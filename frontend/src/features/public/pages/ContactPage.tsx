@@ -4,6 +4,7 @@ import { Button } from '@/shared/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card'
 import { Input } from '@/shared/components/ui/Input'
 import { Label } from '@/shared/components/ui/Label'
+import api from '@/shared/lib/api'
 import PublicHeader from '../components/PublicHeader'
 import PublicFooter from '../components/PublicFooter'
 
@@ -26,7 +27,7 @@ export default function ContactPage() {
     setIsSubmitting(true)
 
     try {
-      const response = await api.post('/support/contact', formData)
+      await api.post('/support/contact', formData)
 
       setSubmitted(true)
       setFormData({ name: '', email: '', subject: '', message: '' })
