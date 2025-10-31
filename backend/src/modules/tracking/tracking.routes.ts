@@ -5,7 +5,7 @@
 
 import { FastifyInstance } from 'fastify'
 import TrackingService from './tracking.service'
-import { verifyAuth } from '@/shared/middleware/auth.middleware'
+import { verifyAuth } from '@/common/middleware/auth.middleware'
 import { config } from '@/config/index.js'
 
 export default async function trackingRoutes(app: FastifyInstance) {
