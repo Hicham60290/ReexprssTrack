@@ -1,19 +1,26 @@
-import { useQuery } from '@tantml:query'
-import { Users, Mail, Phone, Shield, CheckCircle, AlertCircle, Calendar } from 'lucide-react'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
+import { Users, Mail, Phone, Shield, CheckCircle, Search, Package as PackageIcon, Calendar } from 'lucide-react'
 import {
   LuxuryCard,
   SectionHeader,
-  AnimatedBackground
+  AnimatedBackground,
+  GlowButton
 } from '@/shared/components/ui/LuxuryComponents'
+import { Input } from '@/shared/components/ui/Input'
 import api from '@/shared/lib/api'
 import { formatDate } from '@/shared/utils/format'
 import { User, PaginatedResponse } from '@/shared/types'
 
 export default function AdminUsersPage() {
+  const [searchQuery, setSearchQuery] = useState('')
+
   const { data, isLoading } = useQuery<PaginatedResponse<User>>({
-    queryKey: ['admin-users'],
+    queryKey: ['admin-users', searchQuery],
     queryFn: async () => {
-      const response = await api.get('/admin/users')
+      const params = searchQuery ? `?search=${encodeURIComponent(searchQuery)}` : ''
+      const response = await api.get(`/admin/users${params}`)
       return response.data
     },
   })
@@ -61,11 +68,37 @@ export default function AdminUsersPage() {
           </LuxuryCard>
         </div>
 
+        {/* Search Bar */}
+        <LuxuryCard gradient="purple">
+          <div className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Rechercher par nom, email ou téléphone..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-12 h-14 text-base glass border-2 border-indigo-200 focus:border-indigo-500 rounded-xl"
+                />
+              </div>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-all"
+                >
+                  Réinitialiser
+                </button>
+              )}
+            </div>
+          </div>
+        </LuxuryCard>
+
         {/* Users List */}
         <div>
           <SectionHeader
             title="Liste des utilisateurs"
-            subtitle={`${totalUsers} utilisateurs enregistrés`}
+            subtitle={`${totalUsers} utilisateur${totalUsers > 1 ? 's' : ''} ${searchQuery ? 'trouvé(s)' : 'enregistré(s)'}`}
           />
 
           {isLoading ? (
@@ -78,8 +111,14 @@ export default function AdminUsersPage() {
             <LuxuryCard>
               <div className="text-center py-16">
                 <Users className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                <h3 className="text-xl font-semibold text-gray-700 mb-2">Aucun utilisateur</h3>
-                <p className="text-gray-500">Aucun utilisateur trouvé dans la base de données</p>
+                <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                  {searchQuery ? 'Aucun résultat' : 'Aucun utilisateur'}
+                </h3>
+                <p className="text-gray-500">
+                  {searchQuery
+                    ? 'Aucun utilisateur ne correspond à votre recherche'
+                    : 'Aucun utilisateur trouvé dans la base de données'}
+                </p>
               </div>
             </LuxuryCard>
           ) : (
@@ -147,6 +186,17 @@ export default function AdminUsersPage() {
                       </div>
                       <p className="font-semibold text-gray-900 text-sm">{formatDate(user.createdAt)}</p>
                     </div>
+
+                    {/* Action Button */}
+                    <Link to={`/admin/packages?userId=${user.id}`}>
+                      <GlowButton
+                        variant="secondary"
+                        className="w-full justify-center"
+                        icon={<PackageIcon className="w-5 h-5" />}
+                      >
+                        Voir ses colis
+                      </GlowButton>
+                    </Link>
                   </div>
                 </LuxuryCard>
               ))}
