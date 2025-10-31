@@ -5,7 +5,7 @@
 
 import { FastifyInstance } from 'fastify'
 import TrackingService from './tracking.service'
-import { verifyAuth } from '@/common/middleware/auth.middleware'
+import { authenticate } from '@/common/middleware/auth.middleware'
 import { config } from '@/config/index.js'
 
 export default async function trackingRoutes(app: FastifyInstance) {
@@ -21,7 +21,7 @@ export default async function trackingRoutes(app: FastifyInstance) {
   app.post(
     '/register',
     {
-      preHandler: verifyAuth,
+      preHandler: authenticate,
       schema: {
         tags: ['tracking'],
         summary: 'Register tracking numbers for monitoring',
@@ -71,7 +71,7 @@ export default async function trackingRoutes(app: FastifyInstance) {
   app.post(
     '/info',
     {
-      preHandler: verifyAuth,
+      preHandler: authenticate,
       schema: {
         tags: ['tracking'],
         summary: 'Get tracking information',
@@ -115,7 +115,7 @@ export default async function trackingRoutes(app: FastifyInstance) {
   app.post(
     '/detect-carrier',
     {
-      preHandler: verifyAuth,
+      preHandler: authenticate,
       schema: {
         tags: ['tracking'],
         summary: 'Detect carrier for tracking number',
@@ -154,7 +154,7 @@ export default async function trackingRoutes(app: FastifyInstance) {
   app.delete(
     '/',
     {
-      preHandler: verifyAuth,
+      preHandler: authenticate,
       schema: {
         tags: ['tracking'],
         summary: 'Delete tracking numbers',
