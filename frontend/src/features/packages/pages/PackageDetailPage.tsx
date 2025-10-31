@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { Badge } from '@/shared/components/ui/Badge'
 import { Button } from '@/shared/components/ui/Button'
 import api from '@/shared/lib/api'
-import { formatDate, formatDateTime, formatWeight, formatDimensions } from '@/shared/utils/format'
+import { formatDateTime, formatWeight, formatDimensions } from '@/shared/utils/format'
 import { Package as PackageType } from '@/shared/types'
 import TrackingTimeline from '../components/TrackingTimeline'
 

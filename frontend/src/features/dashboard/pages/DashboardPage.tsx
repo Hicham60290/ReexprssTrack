@@ -25,7 +25,7 @@ import {
 import { Badge } from '@/shared/components/ui/Badge'
 import api from '@/shared/lib/api'
 import { useAuthStore } from '@/shared/stores/auth.store'
-import { formatCurrency, formatDate, formatDateTime } from '@/shared/utils/format'
+import { formatCurrency, formatDateTime } from '@/shared/utils/format'
 
 interface DashboardStats {
   totalPackages: number
