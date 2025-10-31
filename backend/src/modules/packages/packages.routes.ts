@@ -9,7 +9,8 @@ import {
   photoCaptionSchema,
 } from './packages.schemas.js';
 import { validateBody, validateQuery, validateParams } from '@common/middleware/validation.middleware.js';
-import { authenticate, AuthenticatedRequest } from '@common/middleware/auth.middleware.js';
+import { authenticate, requireRole, AuthenticatedRequest } from '@common/middleware/auth.middleware.js';
+import { UserRole } from '@prisma/client';
 
 const packagesService = new PackagesService();
 
@@ -282,14 +283,15 @@ export async function packagesRoutes(app: FastifyInstance) {
   );
 
   /**
-   * Update tracking number
+   * Update tracking number (ADMIN ONLY)
    */
   app.post(
     '/:packageId/tracking',
     {
       schema: {
         tags: ['packages'],
-        summary: 'Update tracking number and fetch tracking info',
+        summary: 'Update tracking number and fetch tracking info (Admin only)',
+        description: 'Only administrators can add or update tracking numbers for packages',
         security: [{ Bearer: [] }],
         params: {
           type: 'object',
@@ -306,12 +308,20 @@ export async function packagesRoutes(app: FastifyInstance) {
           },
         },
       },
-      preHandler: [authenticate, validateParams(packageIdParamSchema), validateBody(updateTrackingSchema)],
+      preHandler: [
+        authenticate,
+        requireRole(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+        validateParams(packageIdParamSchema),
+        validateBody(updateTrackingSchema)
+      ],
     },
     async (request: AuthenticatedRequest, reply) => {
       const { packageId } = packageIdParamSchema.parse(request.params);
       const data = updateTrackingSchema.parse(request.body);
-      const result = await packagesService.updateTracking(request.user!.id, packageId, data);
+      // Admin can update any package's tracking, so we pass the actual package's userId
+      // First get the package to find its userId
+      const pkg = await packagesService.getPackageById(packageId);
+      const result = await packagesService.updateTracking(pkg.userId, packageId, data);
       return reply.send(result);
     }
   );

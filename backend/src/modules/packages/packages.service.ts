@@ -129,7 +129,36 @@ export class PackagesService {
   }
 
   /**
-   * Get package by ID
+   * Get package by ID (without userId check - for admin use)
+   */
+  async getPackageById(packageId: string) {
+    const pkg = await prisma.package.findUnique({
+      where: {
+        id: packageId,
+      },
+      include: {
+        quote: true,
+        trackingEvents: {
+          orderBy: { timestamp: 'desc' },
+        },
+        user: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!pkg) {
+      throw new NotFoundError('Package not found');
+    }
+
+    return pkg;
+  }
+
+  /**
+   * Get package by ID (with userId check - for user access)
    */
   async getPackage(userId: string, packageId: string) {
     const pkg = await prisma.package.findFirst({
