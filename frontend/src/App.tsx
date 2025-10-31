@@ -19,6 +19,7 @@ import HelpPage from '@/features/public/pages/HelpPage'
 import SubscriptionPage from '@/features/public/pages/SubscriptionPage'
 import LegalPage from '@/features/public/pages/LegalPage'
 import CookiePolicyPage from '@/features/public/pages/CookiePolicyPage'
+import PrivacyPolicyPage from '@/features/public/pages/PrivacyPolicyPage'
 
 // Auth Pages
 import LoginPage from '@/features/auth/pages/LoginPage'
@@ -71,7 +72,7 @@ function App() {
         <Route path="/abonnement" element={<SubscriptionPage />} />
         <Route path="/mentions-legales" element={<LegalPage />} />
         <Route path="/cookie-policy" element={<CookiePolicyPage />} />
-        <Route path="/privacy" element={<LegalPage />} />
+        <Route path="/privacy" element={<PrivacyPolicyPage />} />
 
         {/* Auth Routes */}
         <Route element={<AuthLayout />}>
