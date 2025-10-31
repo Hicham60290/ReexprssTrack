@@ -8,6 +8,7 @@ import { Button } from '@/shared/components/ui/Button'
 import api from '@/shared/lib/api'
 import { formatDate, formatDateTime, formatWeight, formatDimensions } from '@/shared/utils/format'
 import { Package as PackageType } from '@/shared/types'
+import TrackingTimeline from '../components/TrackingTimeline'
 
 export default function PackageDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -164,6 +165,11 @@ export default function PackageDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Tracking Timeline */}
+      {pkg.trackingNumber && (
+        <TrackingTimeline packageId={pkg.id} trackingNumber={pkg.trackingNumber} />
+      )}
     </div>
   )
 }

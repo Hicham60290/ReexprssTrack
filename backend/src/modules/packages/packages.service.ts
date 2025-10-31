@@ -464,6 +464,32 @@ export class PackagesService {
   }
 
   /**
+   * Sync tracking from 17Track (wrapper for route)
+   */
+  async syncTrackingFrom17Track(userId: string, packageId: string) {
+    // Verify package belongs to user
+    const pkg = await prisma.package.findFirst({
+      where: {
+        id: packageId,
+        userId,
+      },
+    });
+
+    if (!pkg) {
+      throw new NotFoundError('Package not found');
+    }
+
+    if (!pkg.trackingNumber) {
+      throw new BadRequestError('Package has no tracking number');
+    }
+
+    // Fetch tracking from 17Track
+    const result = await this.fetchTracking(packageId, pkg.trackingNumber);
+
+    return result;
+  }
+
+  /**
    * Calculate and update storage fees
    */
   async calculateStorageFees(packageId: string) {

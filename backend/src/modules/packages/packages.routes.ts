@@ -342,4 +342,31 @@ export async function packagesRoutes(app: FastifyInstance) {
       return reply.send(events);
     }
   );
+
+  /**
+   * Sync tracking from 17Track
+   */
+  app.post(
+    '/:packageId/tracking/sync',
+    {
+      schema: {
+        tags: ['packages'],
+        summary: 'Sync tracking events from 17Track',
+        security: [{ Bearer: [] }],
+        params: {
+          type: 'object',
+          required: ['packageId'],
+          properties: {
+            packageId: { type: 'string', format: 'uuid' },
+          },
+        },
+      },
+      preHandler: [authenticate, validateParams(packageIdParamSchema)],
+    },
+    async (request: AuthenticatedRequest, reply) => {
+      const { packageId } = packageIdParamSchema.parse(request.params);
+      const result = await packagesService.syncTrackingFrom17Track(request.user!.id, packageId);
+      return reply.send(result);
+    }
+  );
 }

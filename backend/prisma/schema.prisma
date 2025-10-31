@@ -112,14 +112,16 @@ model Package {
   id              String    @id @default(uuid()) @db.Uuid
   userId          String    @map("user_id") @db.Uuid
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   trackingNumber  String?   @unique @map("tracking_number") @db.VarChar(100)
+  carrier         Int?      // 17Track carrier code
+  carrierName     String?   @map("carrier_name") @db.VarChar(100)
   description     String?   @db.Text
   weight          Decimal?  @db.Decimal(10, 2)
-  
+
   // Dimensions stockées en JSON: {length, width, height}
   dimensions      Json?
-  
+
   status          PackageStatus @default(ANNOUNCED)
   
   receivedAt      DateTime? @map("received_at")
