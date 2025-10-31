@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { ChevronDown, Search, HelpCircle } from 'lucide-react'
-import { Card, CardContent } from '@/shared/components/ui/Card'
+import { ChevronDown, Search, HelpCircle, MessageCircle, Sparkles } from 'lucide-react'
 import { Input } from '@/shared/components/ui/Input'
+import { Link } from 'react-router-dom'
 import PublicHeader from '../components/PublicHeader'
 import PublicFooter from '../components/PublicFooter'
 
@@ -21,11 +21,11 @@ export default function FAQPage() {
   }, [])
 
   const categories = [
-    { id: 'all', name: 'Toutes' },
-    { id: 'getting-started', name: 'Démarrage' },
-    { id: 'shipping', name: 'Expédition' },
-    { id: 'billing', name: 'Facturation' },
-    { id: 'account', name: 'Compte' },
+    { id: 'all', name: 'Toutes', icon: '📚', gradient: 'from-blue-500 to-cyan-500' },
+    { id: 'getting-started', name: 'Démarrage', icon: '🚀', gradient: 'from-green-500 to-emerald-500' },
+    { id: 'shipping', name: 'Expédition', icon: '📦', gradient: 'from-orange-500 to-pink-500' },
+    { id: 'billing', name: 'Facturation', icon: '💳', gradient: 'from-purple-500 to-indigo-500' },
+    { id: 'account', name: 'Compte', icon: '👤', gradient: 'from-pink-500 to-rose-500' },
   ]
 
   const faqs: FAQItem[] = [
@@ -95,105 +95,207 @@ export default function FAQPage() {
   })
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col relative overflow-hidden">
       <PublicHeader />
 
-      <div className="flex-1 pt-24 pb-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Animated Background with Bubbles */}
+      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-orange-50 via-purple-50 to-pink-50">
+        {/* Large gradient orbs */}
+        <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-gradient-to-br from-orange-400/20 to-pink-500/20 rounded-full blur-3xl animate-blob"></div>
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-purple-400/20 to-indigo-500/20 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
+        <div className="absolute bottom-0 left-1/2 w-[500px] h-[500px] bg-gradient-to-br from-pink-400/20 to-orange-500/20 rounded-full blur-3xl animate-blob animation-delay-4000"></div>
+
+        {/* 3D Animated Bubbles */}
+        {[...Array(15)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full animate-bubble-float"
+            style={{
+              left: `${Math.random() * 100}%`,
+              width: `${Math.random() * 100 + 50}px`,
+              height: `${Math.random() * 100 + 50}px`,
+              background: `radial-gradient(circle at 30% 30%, ${
+                ['rgba(255,200,150,0.2)', 'rgba(200,150,255,0.2)', 'rgba(150,200,255,0.2)', 'rgba(255,150,200,0.2)'][
+                  Math.floor(Math.random() * 4)
+                ]
+              }, transparent)`,
+              animationDuration: `${Math.random() * 15 + 20}s`,
+              animationDelay: `${Math.random() * 5}s`,
+              filter: 'blur(2px)'
+            }}
+          >
+            <div className="w-full h-full rounded-full animate-bubble-3d"></div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex-1 pt-24 pb-16 relative z-10">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-100 rounded-full mb-4">
-              <HelpCircle className="w-8 h-8 text-orange-600" />
+          <div className="text-center mb-12 animate-float">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-orange-500 to-pink-600 rounded-3xl mb-6 shadow-xl animate-float animation-delay-1000">
+              <HelpCircle className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Questions fréquentes
+
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
+              <span className="bg-gradient-to-r from-orange-600 via-pink-600 to-purple-600 bg-clip-text text-transparent">
+                Questions fréquentes
+              </span>
             </h1>
-            <p className="text-lg text-gray-600">
+
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               Trouvez rapidement des réponses à vos questions
             </p>
           </div>
 
           {/* Search */}
-          <div className="mb-8">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <div className="mb-10 animate-float animation-delay-1000">
+            <div className="relative glass rounded-3xl p-2 border-2 border-white/40 shadow-xl max-w-2xl mx-auto">
+              <Search className="absolute left-6 top-1/2 transform -translate-y-1/2 text-gray-400 w-6 h-6" />
               <Input
                 type="text"
                 placeholder="Rechercher une question..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-14 h-14 bg-white/50 border-none text-lg rounded-2xl"
               />
             </div>
           </div>
 
           {/* Categories */}
-          <div className="flex flex-wrap gap-2 mb-8">
-            {categories.map((category) => (
+          <div className="flex flex-wrap gap-4 mb-12 justify-center">
+            {categories.map((category, index) => (
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.id)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  selectedCategory === category.id
-                    ? 'bg-orange-600 text-white'
-                    : 'bg-white text-gray-700 hover:bg-orange-50'
-                }`}
+                className={`group relative animate-float`}
+                style={{ animationDelay: `${index * 0.1}s` }}
               >
-                {category.name}
+                <div className={`glass rounded-2xl px-6 py-3 border-2 border-white/40 hover:scale-105 transition-all duration-300 ${
+                  selectedCategory === category.id ? 'shadow-2xl' : 'shadow-lg'
+                }`}>
+                  {/* Active indicator */}
+                  {selectedCategory === category.id && (
+                    <div className={`absolute inset-0 bg-gradient-to-r ${category.gradient} opacity-20 rounded-2xl`}></div>
+                  )}
+
+                  <div className="relative z-10 flex items-center gap-2">
+                    <span className="text-2xl">{category.icon}</span>
+                    <span className={`font-semibold ${
+                      selectedCategory === category.id
+                        ? `bg-gradient-to-r ${category.gradient} bg-clip-text text-transparent`
+                        : 'text-gray-700'
+                    }`}>
+                      {category.name}
+                    </span>
+                  </div>
+                </div>
               </button>
             ))}
           </div>
 
           {/* FAQ List */}
-          <div className="space-y-4">
+          <div className="space-y-6">
             {filteredFaqs.length > 0 ? (
               filteredFaqs.map((faq, index) => (
-                <Card key={index} className="overflow-hidden">
-                  <button
-                    onClick={() => toggleItem(index)}
-                    className="w-full p-6 text-left hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex justify-between items-start gap-4">
-                      <h3 className="font-semibold text-gray-900 flex-1">
-                        {faq.question}
-                      </h3>
-                      <ChevronDown
-                        className={`w-5 h-5 text-gray-500 flex-shrink-0 transition-transform ${
-                          expandedItems.includes(index) ? 'transform rotate-180' : ''
-                        }`}
-                      />
+                <div
+                  key={index}
+                  className="animate-float"
+                  style={{ animationDelay: `${index * 0.05}s` }}
+                >
+                  <div className="glass rounded-3xl overflow-hidden border-2 border-white/40 hover:scale-[1.02] transition-all duration-300 shadow-lg hover:shadow-2xl">
+                    <button
+                      onClick={() => toggleItem(index)}
+                      className="w-full p-6 text-left hover:bg-white/50 transition-colors"
+                    >
+                      <div className="flex justify-between items-start gap-4">
+                        <div className="flex items-start gap-4 flex-1">
+                          <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-pink-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
+                            <span className="text-white font-bold">?</span>
+                          </div>
+                          <h3 className="font-bold text-gray-900 flex-1 text-lg leading-relaxed pt-1">
+                            {faq.question}
+                          </h3>
+                        </div>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
+                          expandedItems.includes(index)
+                            ? 'bg-gradient-to-br from-orange-500 to-pink-600 rotate-180'
+                            : 'bg-gray-100'
+                        }`}>
+                          <ChevronDown className={`w-5 h-5 ${
+                            expandedItems.includes(index) ? 'text-white' : 'text-gray-500'
+                          }`} />
+                        </div>
+                      </div>
+                    </button>
+
+                    {/* Animated Answer */}
+                    <div
+                      className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                        expandedItems.includes(index)
+                          ? 'max-h-96 opacity-100'
+                          : 'max-h-0 opacity-0'
+                      }`}
+                    >
+                      <div className="px-6 pb-6 pl-20">
+                        <div className="glass-dark rounded-2xl p-6 border border-white/20">
+                          <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+                            {faq.answer}
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  </button>
-                  {expandedItems.includes(index) && (
-                    <CardContent className="pt-0 pb-6">
-                      <p className="text-gray-600 whitespace-pre-line">
-                        {faq.answer}
-                      </p>
-                    </CardContent>
-                  )}
-                </Card>
+                  </div>
+                </div>
               ))
             ) : (
-              <div className="text-center py-12 text-gray-500">
-                Aucune question trouvée
+              <div className="text-center py-16">
+                <div className="glass rounded-3xl p-12 border-2 border-white/40 inline-block">
+                  <div className="w-20 h-20 bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Search className="w-10 h-10 text-white" />
+                  </div>
+                  <p className="text-gray-500 text-lg font-medium">
+                    Aucune question trouvée
+                  </p>
+                </div>
               </div>
             )}
           </div>
 
           {/* Contact CTA */}
-          <div className="mt-12 text-center bg-white rounded-lg p-8">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
-              Vous ne trouvez pas de réponse ?
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Notre équipe est là pour vous aider
-            </p>
-            <a
-              href="/contact"
-              className="inline-flex items-center justify-center px-6 py-3 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 transition-colors"
-            >
-              Contactez-nous
-            </a>
+          <div className="mt-16 animate-float animation-delay-2000">
+            <div className="relative">
+              <div className="glass rounded-[3rem] p-12 border-2 border-white/40 text-center overflow-hidden shadow-2xl">
+                {/* Animated gradient background */}
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-pink-500/10 to-purple-500/10"></div>
+
+                <div className="relative z-10">
+                  <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-orange-500 to-pink-600 rounded-3xl mb-6 shadow-xl animate-float">
+                    <MessageCircle className="w-10 h-10 text-white" />
+                  </div>
+
+                  <h3 className="text-3xl font-bold mb-4">
+                    <span className="bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">
+                      Vous ne trouvez pas de réponse ?
+                    </span>
+                  </h3>
+
+                  <p className="text-gray-600 mb-8 text-lg">
+                    Notre équipe est là pour vous aider 24/7
+                  </p>
+
+                  <Link to="/contact" className="inline-block group">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-pink-600 rounded-2xl blur-lg group-hover:blur-xl transition-all opacity-70"></div>
+                      <button className="relative bg-gradient-to-r from-orange-500 to-pink-600 text-white px-10 py-5 rounded-2xl font-bold text-lg hover:scale-105 transition-transform shadow-xl flex items-center gap-3">
+                        <Sparkles className="w-6 h-6" />
+                        Contactez-nous
+                      </button>
+                    </div>
+                  </Link>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
