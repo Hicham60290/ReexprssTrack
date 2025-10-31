@@ -6,6 +6,10 @@ import AuthLayout from '@/shared/layouts/AuthLayout'
 import ClientLayout from '@/shared/layouts/ClientLayout'
 import AdminLayout from '@/shared/layouts/AdminLayout'
 
+// Public Pages
+import HomePage from '@/features/public/pages/HomePage'
+import CalculatorPage from '@/features/public/pages/CalculatorPage'
+
 // Auth Pages
 import LoginPage from '@/features/auth/pages/LoginPage'
 import RegisterPage from '@/features/auth/pages/RegisterPage'
@@ -35,7 +39,7 @@ function App() {
     }
 
     if (adminOnly && user?.role !== 'ADMIN') {
-      return <Navigate to="/" replace />
+      return <Navigate to="/dashboard" replace />
     }
 
     return <>{children}</>
@@ -44,6 +48,10 @@ function App() {
   return (
     <Router>
       <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/calculateur" element={<CalculatorPage />} />
+
         {/* Auth Routes */}
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<LoginPage />} />
@@ -59,7 +67,7 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route path="/" element={<DashboardPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/packages" element={<PackagesPage />} />
           <Route path="/packages/:id" element={<PackageDetailPage />} />
           <Route path="/quotes" element={<QuotesPage />} />
@@ -82,6 +90,9 @@ function App() {
           <Route path="quotes" element={<AdminQuotesPage />} />
           <Route path="payments" element={<AdminPaymentsPage />} />
         </Route>
+
+        {/* Catch all - redirect to home */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   )
