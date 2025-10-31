@@ -82,14 +82,6 @@ export default function DashboardPage() {
     }
   })
 
-  const copyAddress = () => {
-    if (!frenchAddress) return
-    const fullAddress = `${user?.firstName} ${user?.lastName}\n${frenchAddress.addressLine1}\n${frenchAddress.addressLine2}\n${frenchAddress.postalCode} ${frenchAddress.city}\nFrance`
-    navigator.clipboard.writeText(fullAddress)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
       DELIVERED: 'bg-green-100 text-green-800 border-green-200',
@@ -122,44 +114,85 @@ export default function DashboardPage() {
         </div>
 
         {/* French Address - Premium Card */}
-        {frenchAddress && (
-          <LuxuryCard gradient="gold" className="overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-amber-200 to-transparent rounded-full blur-3xl opacity-30 -mr-32 -mt-32" />
-            <div className="relative p-8">
-              <div className="flex items-start justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg">
-                    <MapPin className="w-7 h-7 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Votre Adresse Française</h2>
-                    <p className="text-amber-700 text-sm font-medium">Premium · Permanente</p>
-                  </div>
+        <LuxuryCard gradient="gold" className="overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-amber-200 to-transparent rounded-full blur-3xl opacity-30 -mr-32 -mt-32" />
+          <div className="relative p-8">
+            <div className="flex items-start justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <MapPin className="w-7 h-7 text-white" />
                 </div>
-                <Sparkles className="w-6 h-6 text-amber-500 animate-pulse" />
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Votre Adresse Française</h2>
+                  <p className="text-amber-700 text-sm font-medium">Premium · Permanente · Gratuite</p>
+                </div>
+              </div>
+              <Sparkles className="w-6 h-6 text-amber-500 animate-pulse" />
+            </div>
+
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border-2 border-amber-200 shadow-xl">
+              <p className="text-sm text-gray-600 mb-4">
+                Utilisez cette adresse pour toutes vos commandes en ligne :
+              </p>
+
+              <div className="font-mono text-sm md:text-base text-gray-900 space-y-2 mb-6">
+                <div className="font-bold text-lg text-orange-600">{user?.firstName} {user?.lastName}</div>
+                {frenchAddress?.referenceCode && (
+                  <div className="text-purple-600 font-bold text-lg">Réf: {frenchAddress.referenceCode}</div>
+                )}
+                <div className="font-bold text-lg">ReExpressTrack</div>
+                <div>64 Route de Mouy</div>
+                <div className="font-semibold">60290 Cauffry</div>
+                <div className="text-blue-600 font-semibold">FRANCE 🇫🇷</div>
               </div>
 
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border-2 border-amber-200 shadow-xl">
-                <div className="font-mono text-sm md:text-base text-gray-900 space-y-2">
-                  <div className="font-bold text-lg">{user?.firstName} {user?.lastName}</div>
-                  <div>{frenchAddress.addressLine1}</div>
-                  <div className="text-orange-600 font-bold text-lg">{frenchAddress.addressLine2}</div>
-                  <div className="font-semibold">{frenchAddress.postalCode} {frenchAddress.city}</div>
-                  <div className="text-blue-600 font-semibold">FRANCE 🇫🇷</div>
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200 mb-6">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-white text-lg">📞</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-700 mb-1">Contact entrepôt</p>
+                    <a href="tel:+33614191518" className="text-green-600 font-bold hover:text-green-700 transition-colors">
+                      +33 6 14 19 15 18
+                    </a>
+                  </div>
                 </div>
+              </div>
 
-                <div className="mt-6 flex gap-3">
-                  <GlowButton onClick={copyAddress} variant="primary" icon={copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}>
-                    {copied ? 'Copié !' : 'Copier l\'adresse'}
-                  </GlowButton>
-                  <button className="px-4 py-2 text-sm text-amber-700 hover:text-amber-900 transition-colors">
-                    Référence: {frenchAddress.referenceCode}
-                  </button>
+              <div className="flex gap-3">
+                <GlowButton
+                  onClick={() => {
+                    const fullAddress = `${user?.firstName} ${user?.lastName}${frenchAddress?.referenceCode ? `\nRéf: ${frenchAddress.referenceCode}` : ''}\nReExpressTrack\n64 Route de Mouy\n60290 Cauffry\nFRANCE\n\nContact: +33 6 14 19 15 18`
+                    navigator.clipboard.writeText(fullAddress)
+                    setCopied(true)
+                    setTimeout(() => setCopied(false), 2000)
+                  }}
+                  variant="primary"
+                  icon={copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
+                >
+                  {copied ? 'Copié !' : 'Copier l\'adresse'}
+                </GlowButton>
+              </div>
+            </div>
+
+            {/* Info Box */}
+            <div className="mt-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-4 border border-blue-200">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-white text-lg">💡</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-gray-700 mb-1">Comment ça marche ?</p>
+                  <p className="text-sm text-gray-600">
+                    Utilisez cette adresse lors de vos achats en ligne. Nous recevrons vos colis en France et vous les réexpédierons vers votre destination.
+                    {frenchAddress?.referenceCode && ` N'oubliez pas d'inclure votre code de référence.`}
+                  </p>
                 </div>
               </div>
             </div>
-          </LuxuryCard>
-        )}
+          </div>
+        </LuxuryCard>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
