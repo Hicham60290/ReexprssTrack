@@ -6,12 +6,18 @@ import { SupportStatus, SupportPriority } from '@prisma/client';
  */
 export const createTicketSchema = z.object({
   subject: z.string().min(5, 'Subject must be at least 5 characters').max(200, 'Subject too long'),
-  message: z.string().min(10, 'Message must be at least 10 characters').max(5000, 'Message too long'),
-  priority: z.nativeEnum(SupportPriority).default(SupportPriority.NORMAL),
+  description: z.string().min(10, 'Description must be at least 10 characters').max(5000, 'Description too long').optional(),
+  message: z.string().min(10, 'Message must be at least 10 characters').max(5000, 'Message too long').optional(),
+  priority: z.enum(['LOW', 'MEDIUM', 'NORMAL', 'HIGH', 'URGENT']).default('MEDIUM').transform((val) =>
+    val === 'MEDIUM' ? 'NORMAL' : val
+  ).pipe(z.nativeEnum(SupportPriority)),
   packageId: z.string().uuid().optional(),
   quoteId: z.string().uuid().optional(),
   paymentId: z.string().uuid().optional(),
-});
+}).transform((data) => ({
+  ...data,
+  message: data.message || data.description || '',
+}));
 
 export type CreateTicketInput = z.infer<typeof createTicketSchema>;
 
@@ -46,7 +52,9 @@ export const listTicketsQuerySchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(10),
   status: z.nativeEnum(SupportStatus).optional(),
-  priority: z.nativeEnum(SupportPriority).optional(),
+  priority: z.enum(['LOW', 'MEDIUM', 'NORMAL', 'HIGH', 'URGENT']).optional().transform((val) =>
+    val === 'MEDIUM' ? 'NORMAL' : val
+  ).pipe(z.nativeEnum(SupportPriority).optional()),
   search: z.string().optional(), // Search in subject
   sortBy: z.enum(['createdAt', 'updatedAt', 'priority']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),

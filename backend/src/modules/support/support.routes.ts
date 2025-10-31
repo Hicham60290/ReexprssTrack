@@ -20,7 +20,7 @@ export async function supportRoutes(app: FastifyInstance) {
    * Create a new ticket
    */
   app.post(
-    '/',
+    '/tickets',
     {
       schema: {
         tags: ['support'],
@@ -29,11 +29,11 @@ export async function supportRoutes(app: FastifyInstance) {
         security: [{ Bearer: [] }],
         body: {
           type: 'object',
-          required: ['subject', 'message'],
+          required: ['subject', 'description'],
           properties: {
             subject: { type: 'string', minLength: 5, maxLength: 200 },
-            message: { type: 'string', minLength: 10, maxLength: 5000 },
-            priority: { type: 'string', enum: ['LOW', 'NORMAL', 'HIGH', 'URGENT'], default: 'NORMAL' },
+            description: { type: 'string', minLength: 10, maxLength: 5000 },
+            priority: { type: 'string', enum: ['LOW', 'MEDIUM', 'HIGH', 'URGENT'], default: 'MEDIUM' },
             packageId: { type: 'string', format: 'uuid' },
             quoteId: { type: 'string', format: 'uuid' },
             paymentId: { type: 'string', format: 'uuid' },
@@ -53,7 +53,7 @@ export async function supportRoutes(app: FastifyInstance) {
    * Get user's tickets
    */
   app.get(
-    '/my-tickets',
+    '/tickets',
     {
       schema: {
         tags: ['support'],
@@ -66,7 +66,7 @@ export async function supportRoutes(app: FastifyInstance) {
             page: { type: 'number', minimum: 1, default: 1 },
             limit: { type: 'number', minimum: 1, maximum: 100, default: 10 },
             status: { type: 'string', enum: ['OPEN', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'RESOLVED', 'CLOSED'] },
-            priority: { type: 'string', enum: ['LOW', 'NORMAL', 'HIGH', 'URGENT'] },
+            priority: { type: 'string', enum: ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] },
             search: { type: 'string' },
             sortBy: { type: 'string', enum: ['createdAt', 'updatedAt', 'priority'], default: 'createdAt' },
             sortOrder: { type: 'string', enum: ['asc', 'desc'], default: 'desc' },
