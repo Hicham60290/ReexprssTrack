@@ -9,6 +9,9 @@ import AdminLayout from '@/shared/layouts/AdminLayout'
 // Public Pages
 import HomePage from '@/features/public/pages/HomePage'
 import CalculatorPage from '@/features/public/pages/CalculatorPage'
+import FAQPage from '@/features/public/pages/FAQPage'
+import PricingPage from '@/features/public/pages/PricingPage'
+import ContactPage from '@/features/public/pages/ContactPage'
 
 // Auth Pages
 import LoginPage from '@/features/auth/pages/LoginPage'
@@ -51,6 +54,9 @@ function App() {
         {/* Public Routes */}
         <Route path="/" element={<HomePage />} />
         <Route path="/calculateur" element={<CalculatorPage />} />
+        <Route path="/tarifs" element={<PricingPage />} />
+        <Route path="/faq" element={<FAQPage />} />
+        <Route path="/contact" element={<ContactPage />} />
 
         {/* Auth Routes */}
         <Route element={<AuthLayout />}>
