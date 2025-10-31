@@ -59,6 +59,7 @@ export default function AdminPackageDetailPage() {
   const [width, setWidth] = useState('')
   const [height, setHeight] = useState('')
   const [destination, setDestination] = useState('')
+  const [trackingNumber, setTrackingNumber] = useState('')
 
   // Fetch package details
   const { data: pkg, isLoading } = useQuery<Package>({
@@ -127,6 +128,20 @@ export default function AdminPackageDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['admin-package', id] })
       setShowCalculator(false)
       updateStatusMutation.mutate('QUOTE_READY')
+    },
+  })
+
+  // Update tracking number mutation
+  const updateTrackingMutation = useMutation({
+    mutationFn: async (trackingNum: string) => {
+      const response = await api.post(`/packages/${id}/tracking`, {
+        trackingNumber: trackingNum,
+      })
+      return response.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-package', id] })
+      setTrackingNumber('')
     },
   })
 
@@ -269,6 +284,67 @@ export default function AdminPackageDetailPage() {
                       </div>
                     )}
                   </div>
+                </div>
+              </div>
+            </LuxuryCard>
+
+            {/* Tracking Number Management */}
+            <LuxuryCard gradient="green">
+              <div className="p-6 space-y-4">
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <Truck className="w-6 h-6 text-green-600" />
+                  Numéro de suivi
+                </h2>
+
+                {pkg.trackingNumber ? (
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border-2 border-green-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600 mb-1">Numéro de suivi actuel</p>
+                        <p className="text-lg font-bold text-gray-900">{pkg.trackingNumber}</p>
+                        {pkg.carrierName && (
+                          <p className="text-sm text-gray-600 mt-1">Transporteur : {pkg.carrierName}</p>
+                        )}
+                      </div>
+                      <Check className="w-8 h-8 text-green-600" />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-yellow-50 rounded-xl p-4 border-2 border-yellow-200">
+                    <p className="text-sm text-gray-700 flex items-center gap-2">
+                      <AlertCircle className="w-5 h-5 text-yellow-600" />
+                      Aucun numéro de suivi enregistré pour ce colis
+                    </p>
+                  </div>
+                )}
+
+                {/* Form to add/update tracking */}
+                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-green-100 space-y-3">
+                  <Label className="text-gray-900 font-semibold">
+                    {pkg.trackingNumber ? 'Mettre à jour' : 'Ajouter'} le numéro de suivi
+                  </Label>
+                  <Input
+                    type="text"
+                    value={trackingNumber}
+                    onChange={(e) => setTrackingNumber(e.target.value)}
+                    placeholder="Ex: LX123456789FR"
+                    className="border-green-200 focus:border-green-400"
+                  />
+                  <GlowButton
+                    onClick={() => trackingNumber && updateTrackingMutation.mutate(trackingNumber)}
+                    disabled={!trackingNumber || updateTrackingMutation.isPending}
+                    icon={<Truck className="w-5 h-5" />}
+                    className="w-full justify-center bg-gradient-to-r from-green-500 to-emerald-600"
+                  >
+                    {updateTrackingMutation.isPending
+                      ? 'Enregistrement...'
+                      : pkg.trackingNumber
+                      ? 'Mettre à jour et synchroniser'
+                      : 'Enregistrer et synchroniser avec 17Track'}
+                  </GlowButton>
+                  <p className="text-xs text-gray-500">
+                    Le numéro sera automatiquement enregistré avec 17Track pour le suivi en temps réel
+                  </p>
                 </div>
               </div>
             </LuxuryCard>

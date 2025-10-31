@@ -8,14 +8,16 @@ import {
   MessageSquare,
   LogOut,
   Menu,
-  X
+  X,
+  TruckIcon
 } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/shared/utils/cn'
 
 const navigation = [
-  { name: 'Tableau de bord', href: '/', icon: LayoutDashboard, emoji: '📊' },
+  { name: 'Tableau de bord', href: '/dashboard', icon: LayoutDashboard, emoji: '📊' },
   { name: 'Mes colis', href: '/packages', icon: Package, emoji: '📦' },
+  { name: 'Suivi de colis', href: '/tracking', icon: TruckIcon, emoji: '🚚' },
   { name: 'Mes devis', href: '/quotes', icon: FileText, emoji: '💰' },
   { name: 'Mon profil', href: '/profile', icon: User, emoji: '👤' },
   { name: 'Support', href: '/support', icon: MessageSquare, emoji: '💬' },

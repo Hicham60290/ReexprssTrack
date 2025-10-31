@@ -28,6 +28,7 @@ import PackageDetailPage from '@/features/packages/pages/PackageDetailPage'
 import QuotesPage from '@/features/quotes/pages/QuotesPage'
 import ProfilePage from '@/features/profile/pages/ProfilePage'
 import SupportPage from '@/features/support/pages/SupportPage'
+import TrackingPage from '@/features/tracking/pages/TrackingPage'
 
 // Admin Pages
 import AdminDashboardPage from '@/features/admin/pages/AdminDashboardPage'
@@ -83,6 +84,7 @@ function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/packages" element={<PackagesPage />} />
           <Route path="/packages/:id" element={<PackageDetailPage />} />
+          <Route path="/tracking" element={<TrackingPage />} />
           <Route path="/quotes" element={<QuotesPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/support" element={<SupportPage />} />
