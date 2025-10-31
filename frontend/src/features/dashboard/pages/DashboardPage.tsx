@@ -136,7 +136,9 @@ export default function DashboardPage() {
               </p>
 
               <div className="font-mono text-sm md:text-base text-gray-900 space-y-2 mb-6">
-                <div className="font-bold text-lg text-orange-600">{user?.firstName} {user?.lastName}</div>
+                {user?.firstName && user?.lastName && (
+                  <div className="font-bold text-lg text-orange-600">{user.firstName} {user.lastName}</div>
+                )}
                 {frenchAddress?.referenceCode && (
                   <div className="text-purple-600 font-bold text-lg">Réf: {frenchAddress.referenceCode}</div>
                 )}
@@ -163,7 +165,13 @@ export default function DashboardPage() {
               <div className="flex gap-3">
                 <GlowButton
                   onClick={() => {
-                    const fullAddress = `${user?.firstName} ${user?.lastName}${frenchAddress?.referenceCode ? `\nRéf: ${frenchAddress.referenceCode}` : ''}\nReExpressTrack\n64 Route de Mouy\n60290 Cauffry\nFRANCE\n\nContact: +33 6 14 19 15 18`
+                    const nameLine = user?.firstName && user?.lastName
+                      ? `${user.firstName} ${user.lastName}\n`
+                      : ''
+                    const refLine = frenchAddress?.referenceCode
+                      ? `Réf: ${frenchAddress.referenceCode}\n`
+                      : ''
+                    const fullAddress = `${nameLine}${refLine}ReExpressTrack\n64 Route de Mouy\n60290 Cauffry\nFRANCE\n\nContact: +33 6 14 19 15 18`
                     navigator.clipboard.writeText(fullAddress)
                     setCopied(true)
                     setTimeout(() => setCopied(false), 2000)
