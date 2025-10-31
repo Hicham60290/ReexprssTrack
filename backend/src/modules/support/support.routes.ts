@@ -17,6 +17,49 @@ const supportService = new SupportService();
 
 export async function supportRoutes(app: FastifyInstance) {
   /**
+   * Create contact message (public endpoint without auth)
+   */
+  app.post(
+    '/contact',
+    {
+      schema: {
+        tags: ['support'],
+        summary: 'Send contact message',
+        description: 'Send a contact message (public - no authentication required)',
+        body: {
+          type: 'object',
+          required: ['name', 'email', 'subject', 'message'],
+          properties: {
+            name: { type: 'string', minLength: 2, maxLength: 100 },
+            email: { type: 'string', format: 'email' },
+            subject: { type: 'string', minLength: 5, maxLength: 200 },
+            message: { type: 'string', minLength: 10, maxLength: 5000 },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const { name, email, subject, message } = request.body as any;
+
+      // Log contact message
+      request.log.info({
+        name,
+        email,
+        subject,
+        message
+      }, 'Contact form submission');
+
+      // TODO: Send email notification to admin
+      // await emailService.sendContactNotification({ name, email, subject, message });
+
+      return reply.status(201).send({
+        success: true,
+        message: 'Votre message a été envoyé avec succès. Nous vous répondrons dans les plus brefs délais.'
+      });
+    }
+  );
+
+  /**
    * Create a new ticket
    */
   app.post(

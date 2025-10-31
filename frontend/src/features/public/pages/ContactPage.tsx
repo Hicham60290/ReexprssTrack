@@ -25,14 +25,19 @@ export default function ContactPage() {
     e.preventDefault()
     setIsSubmitting(true)
 
-    // Simulation - À remplacer par un appel API
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    try {
+      const response = await api.post('/support/contact', formData)
 
-    setSubmitted(true)
-    setIsSubmitting(false)
-    setFormData({ name: '', email: '', subject: '', message: '' })
+      setSubmitted(true)
+      setFormData({ name: '', email: '', subject: '', message: '' })
 
-    setTimeout(() => setSubmitted(false), 5000)
+      setTimeout(() => setSubmitted(false), 5000)
+    } catch (error: any) {
+      console.error('Error sending contact message:', error)
+      alert(error.response?.data?.message || 'Une erreur est survenue. Veuillez réessayer.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
