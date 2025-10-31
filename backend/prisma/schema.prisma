@@ -116,6 +116,7 @@ model Package {
   trackingNumber  String?   @unique @map("tracking_number") @db.VarChar(100)
   carrier         Int?      // 17Track carrier code
   carrierName     String?   @map("carrier_name") @db.VarChar(100)
+  tracking17TrackEnabled Boolean @default(false) @map("tracking_17track_enabled") // Admin a activé le suivi 17Track
   description     String?   @db.Text
   weight          Decimal?  @db.Decimal(10, 2)
 

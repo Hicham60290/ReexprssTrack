@@ -283,15 +283,17 @@ export async function packagesRoutes(app: FastifyInstance) {
   );
 
   /**
-   * Update tracking number (ADMIN ONLY)
+   * Update tracking number
+   * Client can add tracking number for their own package
+   * BUT cannot enable 17Track sync - only admin can
    */
   app.post(
     '/:packageId/tracking',
     {
       schema: {
         tags: ['packages'],
-        summary: 'Update tracking number and fetch tracking info (Admin only)',
-        description: 'Only administrators can add or update tracking numbers for packages',
+        summary: 'Update tracking number',
+        description: 'Update the tracking number for a package. Clients can only update their own packages tracking number (without 17Track sync). This is just for information.',
         security: [{ Bearer: [] }],
         params: {
           type: 'object',
@@ -308,20 +310,44 @@ export async function packagesRoutes(app: FastifyInstance) {
           },
         },
       },
-      preHandler: [
-        authenticate,
-        requireRole(UserRole.ADMIN, UserRole.SUPER_ADMIN),
-        validateParams(packageIdParamSchema),
-        validateBody(updateTrackingSchema)
-      ],
+      preHandler: [authenticate, validateParams(packageIdParamSchema), validateBody(updateTrackingSchema)],
     },
     async (request: AuthenticatedRequest, reply) => {
       const { packageId } = packageIdParamSchema.parse(request.params);
       const data = updateTrackingSchema.parse(request.body);
-      // Admin can update any package's tracking, so we pass the actual package's userId
-      // First get the package to find its userId
-      const pkg = await packagesService.getPackageById(packageId);
-      const result = await packagesService.updateTracking(pkg.userId, packageId, data);
+      const result = await packagesService.updateTracking(request.user!.id, packageId, data);
+      return reply.send(result);
+    }
+  );
+
+  /**
+   * Enable 17Track sync for a package (ADMIN ONLY)
+   */
+  app.post(
+    '/:packageId/tracking/enable-17track',
+    {
+      schema: {
+        tags: ['packages'],
+        summary: 'Enable 17Track synchronization (Admin only)',
+        description: 'Enable 17Track tracking for a package and register it with the 17Track API. Only administrators can do this.',
+        security: [{ Bearer: [] }],
+        params: {
+          type: 'object',
+          required: ['packageId'],
+          properties: {
+            packageId: { type: 'string', format: 'uuid' },
+          },
+        },
+      },
+      preHandler: [
+        authenticate,
+        requireRole(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+        validateParams(packageIdParamSchema)
+      ],
+    },
+    async (request: AuthenticatedRequest, reply) => {
+      const { packageId } = packageIdParamSchema.parse(request.params);
+      const result = await packagesService.enable17TrackSync(packageId);
       return reply.send(result);
     }
   );

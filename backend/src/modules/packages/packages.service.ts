@@ -390,7 +390,7 @@ export class PackagesService {
   }
 
   /**
-   * Update tracking number and fetch tracking info
+   * Update tracking number (for client - does NOT enable 17Track)
    */
   async updateTracking(userId: string, packageId: string, data: UpdateTrackingInput) {
     // Check ownership
@@ -405,7 +405,7 @@ export class PackagesService {
       throw new NotFoundError('Package not found');
     }
 
-    // Update tracking number
+    // Update tracking number ONLY (no 17Track sync)
     await prisma.package.update({
       where: { id: packageId },
       data: {
@@ -413,13 +413,63 @@ export class PackagesService {
       },
     });
 
-    // Queue tracking update
-    await queueService.updateTracking({
-      packageId,
-      trackingNumber: data.trackingNumber,
+    // Log update
+    await prisma.auditLog.create({
+      data: {
+        userId,
+        action: 'TRACKING_NUMBER_ADDED',
+        resourceType: 'PACKAGE',
+        resourceId: packageId,
+        metadata: { trackingNumber: data.trackingNumber, note: 'Added by client' },
+      },
     });
 
-    return { success: true, message: 'Tracking update queued' };
+    return { success: true, message: 'Tracking number saved. Admin will enable 17Track sync.' };
+  }
+
+  /**
+   * Enable 17Track sync for a package (ADMIN ONLY)
+   */
+  async enable17TrackSync(packageId: string) {
+    // Get package
+    const pkg = await prisma.package.findUnique({
+      where: { id: packageId },
+    });
+
+    if (!pkg) {
+      throw new NotFoundError('Package not found');
+    }
+
+    if (!pkg.trackingNumber) {
+      throw new BadRequestError('Package must have a tracking number before enabling 17Track sync');
+    }
+
+    // Enable 17Track tracking
+    await prisma.package.update({
+      where: { id: packageId },
+      data: {
+        tracking17TrackEnabled: true,
+      },
+    });
+
+    // Queue tracking registration with 17Track
+    await queueService.updateTracking({
+      packageId,
+      trackingNumber: pkg.trackingNumber,
+    });
+
+    // Log action
+    await prisma.auditLog.create({
+      data: {
+        userId: pkg.userId,
+        action: 'TRACKING_17TRACK_ENABLED',
+        resourceType: 'PACKAGE',
+        resourceId: packageId,
+        metadata: { trackingNumber: pkg.trackingNumber, note: 'Enabled by admin' },
+      },
+    });
+
+    return { success: true, message: '17Track sync enabled and registered' };
   }
 
   /**

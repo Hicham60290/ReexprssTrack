@@ -27,6 +27,7 @@ interface Package {
   trackingNumber: string
   carrier?: number
   carrierName?: string
+  tracking17TrackEnabled: boolean
   description: string
   status: string
   weight?: number
@@ -39,15 +40,15 @@ export default function TrackingPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const queryClient = useQueryClient()
 
-  // Fetch user's packages with tracking
+  // Fetch user's packages with 17Track enabled by admin
   const { data: packages, isLoading } = useQuery<Package[]>({
     queryKey: ['packages-with-tracking'],
     queryFn: async () => {
       const response = await api.get('/packages', {
         params: { limit: 100 }
       })
-      // Filter only packages with trackingNumber
-      return response.data.data.filter((pkg: Package) => pkg.trackingNumber)
+      // Filter only packages with 17Track enabled by admin
+      return response.data.data.filter((pkg: Package) => pkg.trackingNumber && pkg.tracking17TrackEnabled)
     }
   })
 
@@ -189,8 +190,13 @@ export default function TrackingPage() {
               <p className="text-gray-600 text-lg">
                 {searchQuery
                   ? 'Aucun colis ne correspond à votre recherche'
-                  : 'Vos colis avec numéro de suivi apparaîtront ici'}
+                  : 'Les colis avec suivi 17Track activé par l\'administrateur apparaîtront ici'}
               </p>
+              {!searchQuery && (
+                <p className="text-sm text-gray-500 mt-2">
+                  💡 Ajoutez votre numéro de suivi lors de la déclaration de votre colis. L'admin l'activera pour le suivi en temps réel.
+                </p>
+              )}
             </div>
           </div>
         )}

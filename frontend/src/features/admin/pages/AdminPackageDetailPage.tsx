@@ -131,7 +131,7 @@ export default function AdminPackageDetailPage() {
     },
   })
 
-  // Update tracking number mutation
+  // Update tracking number mutation (just saves the number)
   const updateTrackingMutation = useMutation({
     mutationFn: async (trackingNum: string) => {
       const response = await api.post(`/packages/${id}/tracking`, {
@@ -142,6 +142,17 @@ export default function AdminPackageDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-package', id] })
       setTrackingNumber('')
+    },
+  })
+
+  // Enable 17Track sync mutation
+  const enable17TrackMutation = useMutation({
+    mutationFn: async () => {
+      const response = await api.post(`/packages/${id}/tracking/enable-17track`)
+      return response.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-package', id] })
     },
   })
 
@@ -298,9 +309,9 @@ export default function AdminPackageDetailPage() {
 
                 {pkg.trackingNumber ? (
                   <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border-2 border-green-200">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between mb-3">
                       <div>
-                        <p className="text-sm text-gray-600 mb-1">Numéro de suivi actuel</p>
+                        <p className="text-sm text-gray-600 mb-1">Numéro de suivi</p>
                         <p className="text-lg font-bold text-gray-900">{pkg.trackingNumber}</p>
                         {pkg.carrierName && (
                           <p className="text-sm text-gray-600 mt-1">Transporteur : {pkg.carrierName}</p>
@@ -308,12 +319,45 @@ export default function AdminPackageDetailPage() {
                       </div>
                       <Check className="w-8 h-8 text-green-600" />
                     </div>
+
+                    {/* 17Track Status */}
+                    <div className={`rounded-lg p-3 border-2 ${
+                      pkg.tracking17TrackEnabled
+                        ? 'bg-blue-50 border-blue-200'
+                        : 'bg-orange-50 border-orange-200'
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-700">
+                            Suivi 17Track
+                          </p>
+                          <p className="text-xs text-gray-600 mt-1">
+                            {pkg.tracking17TrackEnabled
+                              ? '✅ Activé - Le client peut suivre ce colis'
+                              : '⏳ Non activé - Le client ne peut pas encore suivre'}
+                          </p>
+                        </div>
+                        {!pkg.tracking17TrackEnabled && (
+                          <GlowButton
+                            onClick={() => enable17TrackMutation.mutate()}
+                            disabled={enable17TrackMutation.isPending}
+                            icon={<Truck className="w-4 h-4" />}
+                            className="bg-gradient-to-r from-blue-500 to-indigo-600 text-sm"
+                          >
+                            {enable17TrackMutation.isPending ? 'Activation...' : 'Activer'}
+                          </GlowButton>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   <div className="bg-yellow-50 rounded-xl p-4 border-2 border-yellow-200">
                     <p className="text-sm text-gray-700 flex items-center gap-2">
                       <AlertCircle className="w-5 h-5 text-yellow-600" />
                       Aucun numéro de suivi enregistré pour ce colis
+                    </p>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Le client peut ajouter un numéro lors de la déclaration
                     </p>
                   </div>
                 )}
@@ -339,11 +383,11 @@ export default function AdminPackageDetailPage() {
                     {updateTrackingMutation.isPending
                       ? 'Enregistrement...'
                       : pkg.trackingNumber
-                      ? 'Mettre à jour et synchroniser'
-                      : 'Enregistrer et synchroniser avec 17Track'}
+                      ? 'Mettre à jour le numéro'
+                      : 'Enregistrer le numéro'}
                   </GlowButton>
                   <p className="text-xs text-gray-500">
-                    Le numéro sera automatiquement enregistré avec 17Track pour le suivi en temps réel
+                    Après avoir enregistré le numéro, cliquez sur "Activer" pour permettre au client de suivre le colis
                   </p>
                 </div>
               </div>
