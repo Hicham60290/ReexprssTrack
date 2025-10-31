@@ -33,6 +33,7 @@ import SupportPage from '@/features/support/pages/SupportPage'
 import AdminDashboardPage from '@/features/admin/pages/AdminDashboardPage'
 import AdminUsersPage from '@/features/admin/pages/AdminUsersPage'
 import AdminPackagesPage from '@/features/admin/pages/AdminPackagesPage'
+import AdminPackageDetailPage from '@/features/admin/pages/AdminPackageDetailPage'
 import AdminQuotesPage from '@/features/admin/pages/AdminQuotesPage'
 import AdminPaymentsPage from '@/features/admin/pages/AdminPaymentsPage'
 
@@ -99,6 +100,7 @@ function App() {
           <Route index element={<AdminDashboardPage />} />
           <Route path="users" element={<AdminUsersPage />} />
           <Route path="packages" element={<AdminPackagesPage />} />
+          <Route path="packages/:id" element={<AdminPackageDetailPage />} />
           <Route path="quotes" element={<AdminQuotesPage />} />
           <Route path="payments" element={<AdminPaymentsPage />} />
         </Route>

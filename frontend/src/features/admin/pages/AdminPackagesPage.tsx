@@ -1,9 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
-import { Package as PackageIcon, Truck, CheckCircle, XCircle, Clock, Box, Calendar, Scale } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Package as PackageIcon, Truck, CheckCircle, XCircle, Clock, Box, Calendar, Scale, Settings } from 'lucide-react'
 import {
   LuxuryCard,
   SectionHeader,
-  AnimatedBackground
+  AnimatedBackground,
+  GlowButton
 } from '@/shared/components/ui/LuxuryComponents'
 import api from '@/shared/lib/api'
 import { formatDate, formatWeight } from '@/shared/utils/format'
@@ -178,6 +180,17 @@ export default function AdminPackagesPage() {
                           </div>
                         )}
                       </div>
+
+                      {/* Action Button */}
+                      <Link to={`/admin/packages/${pkg.id}`}>
+                        <GlowButton
+                          variant="secondary"
+                          className="w-full justify-center"
+                          icon={<Settings className="w-5 h-5" />}
+                        >
+                          Gérer ce colis
+                        </GlowButton>
+                      </Link>
                     </div>
                   </LuxuryCard>
                 )
