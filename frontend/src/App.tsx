@@ -12,6 +12,9 @@ import CalculatorPage from '@/features/public/pages/CalculatorPage'
 import FAQPage from '@/features/public/pages/FAQPage'
 import PricingPage from '@/features/public/pages/PricingPage'
 import ContactPage from '@/features/public/pages/ContactPage'
+import HelpPage from '@/features/public/pages/HelpPage'
+import SubscriptionPage from '@/features/public/pages/SubscriptionPage'
+import LegalPage from '@/features/public/pages/LegalPage'
 
 // Auth Pages
 import LoginPage from '@/features/auth/pages/LoginPage'
@@ -57,6 +60,9 @@ function App() {
         <Route path="/tarifs" element={<PricingPage />} />
         <Route path="/faq" element={<FAQPage />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/aide" element={<HelpPage />} />
+        <Route path="/abonnement" element={<SubscriptionPage />} />
+        <Route path="/mentions-legales" element={<LegalPage />} />
 
         {/* Auth Routes */}
         <Route element={<AuthLayout />}>
