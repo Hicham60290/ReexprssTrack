@@ -6,15 +6,14 @@
 import { FastifyInstance } from 'fastify'
 import TrackingService from './tracking.service'
 import { verifyAuth } from '@/shared/middleware/auth.middleware'
-
-const TRACKING_API_KEY = process.env.TRACKING_API_KEY || ''
+import { config } from '@/config/index.js'
 
 export default async function trackingRoutes(app: FastifyInstance) {
-  if (!TRACKING_API_KEY) {
-    app.log.warn('TRACKING_API_KEY not configured - tracking features will be disabled')
+  if (!config.track17.apiKey) {
+    app.log.warn('TRACK17_API_KEY not configured - tracking features will be disabled')
   }
 
-  const trackingService = new TrackingService(TRACKING_API_KEY, app.log)
+  const trackingService = new TrackingService(config.track17.apiKey, app.log)
 
   /**
    * Register tracking numbers

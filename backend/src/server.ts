@@ -22,6 +22,7 @@ import { quotesRoutes } from './modules/quotes/quotes.routes.js';
 import { paymentsRoutes } from './modules/payments/payments.routes.js';
 import { adminRoutes } from './modules/admin/admin.routes.js';
 import { supportRoutes } from './modules/support/support.routes.js';
+import trackingRoutes from './modules/tracking/tracking.routes.js';
 
 async function buildServer() {
   const app = Fastify({
@@ -99,6 +100,7 @@ async function buildServer() {
           { name: 'payments', description: 'Payment processing' },
           { name: 'admin', description: 'Admin operations' },
           { name: 'support', description: 'Support tickets' },
+          { name: 'tracking', description: '17Track integration for package tracking' },
         ],
         securityDefinitions: {
           Bearer: {
@@ -217,6 +219,7 @@ async function buildServer() {
     await api.register(paymentsRoutes, { prefix: '/payments' });
     await api.register(adminRoutes, { prefix: '/admin' });
     await api.register(supportRoutes, { prefix: '/support' });
+    await api.register(trackingRoutes, { prefix: '/tracking' });
 
     // API status route
     api.get('/status', async () => {
@@ -230,6 +233,7 @@ async function buildServer() {
           payments: 'active',
           admin: 'active',
           support: 'active',
+          tracking: 'active',
         },
       };
     });
