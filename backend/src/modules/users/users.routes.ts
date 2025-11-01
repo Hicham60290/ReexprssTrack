@@ -9,10 +9,13 @@ import {
 } from './users.schemas.js';
 import { validateBody, validateParams } from '@common/middleware/validation.middleware.js';
 import { authenticate, AuthenticatedRequest } from '@common/middleware/auth.middleware.js';
+import emailPreferencesRoutes from './users.email-preferences.routes.js';
 
 const usersService = new UsersService();
 
 export async function usersRoutes(app: FastifyInstance) {
+  // Register email preferences routes
+  await app.register(emailPreferencesRoutes);
   /**
    * Get current user profile
    */

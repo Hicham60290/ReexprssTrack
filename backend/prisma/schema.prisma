@@ -22,6 +22,7 @@ model User {
   
   // Relations
   profile         Profile?
+  emailPreference EmailPreference?
   packages        Package[]
   quotes          Quote[]
   payments        Payment[]
@@ -70,6 +71,35 @@ model Profile {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("profiles")
+}
+
+model EmailPreference {
+  id        String  @id @default(uuid()) @db.Uuid
+  userId    String  @unique @map("user_id") @db.Uuid
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Notifications de colis
+  packageReceived   Boolean @default(true) @map("package_received")
+  packageShipped    Boolean @default(true) @map("package_shipped")
+  packageDelivered  Boolean @default(true) @map("package_delivered")
+
+  // Devis
+  quoteCreated  Boolean @default(true) @map("quote_created")
+  quoteUpdated  Boolean @default(true) @map("quote_updated")
+
+  // Paiements
+  paymentReceived Boolean @default(true) @map("payment_received")
+  paymentFailed   Boolean @default(true) @map("payment_failed")
+
+  // Compte et marketing
+  accountUpdates      Boolean @default(true) @map("account_updates")
+  promotionalEmails   Boolean @default(false) @map("promotional_emails")
+  weeklyDigest        Boolean @default(false) @map("weekly_digest")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("email_preferences")
 }
 
 enum KycStatus {

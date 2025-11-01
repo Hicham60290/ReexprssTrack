@@ -33,6 +33,7 @@ import PackagesPage from '@/features/packages/pages/PackagesPage'
 import PackageDetailPage from '@/features/packages/pages/PackageDetailPage'
 import QuotesPage from '@/features/quotes/pages/QuotesPage'
 import ProfilePage from '@/features/profile/pages/ProfilePage'
+import EmailSettingsPage from '@/features/profile/pages/EmailSettingsPage'
 import SupportPage from '@/features/support/pages/SupportPage'
 import TrackingPage from '@/features/tracking/pages/TrackingPage'
 
@@ -97,6 +98,7 @@ function App() {
           <Route path="/tracking" element={<TrackingPage />} />
           <Route path="/quotes" element={<QuotesPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/email-settings" element={<EmailSettingsPage />} />
           <Route path="/support" element={<SupportPage />} />
         </Route>
 
