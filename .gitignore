@@ -1,0 +1,86 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDEs
+.idea/
+*.iml
+.project
+.classpath
+.settings/
+*.sublime-*
+
+# Prisma
+*.db
+*.db-journal
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Archives (keep only source code in git)
+*.zip
+*.tar.gz
+*.rar
+
+# Frontend specific
+frontend/.next/
+frontend/dist/
+frontend/out/
+frontend/.cache/
+
+# Backend specific
+backend/dist/
+backend/node_modules/
+
+# MinIO data (local storage)
+minio_data/
+
+# Database dumps
+*.sql
+*.dump
+
+# VS Code workspace files (optional, remove if you want to commit them)
+# .vscode/
