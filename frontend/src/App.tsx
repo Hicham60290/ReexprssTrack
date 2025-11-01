@@ -8,6 +8,7 @@ import AdminLayout from '@/shared/layouts/AdminLayout'
 
 // Components
 import CookieBanner from '@/components/CookieBanner'
+import GoogleAnalytics from '@/components/GoogleAnalytics'
 
 // Public Pages
 import HomePage from '@/features/public/pages/HomePage'
@@ -61,6 +62,7 @@ function App() {
   return (
     <Router>
       <CookieBanner />
+      <GoogleAnalytics />
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<HomePage />} />
