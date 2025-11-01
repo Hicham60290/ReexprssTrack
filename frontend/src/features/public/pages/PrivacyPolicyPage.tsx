@@ -1,4 +1,4 @@
-import { Shield, Lock, Eye, Database, Users, FileText, Mail, Phone, Clock, AlertTriangle, CheckCircle, Download, Trash2 } from 'lucide-react';
+import { Shield, Lock, Eye, Database, Users, FileText, Mail, Clock, AlertTriangle, CheckCircle, Download, Trash2 } from 'lucide-react';
 import { useCookieConsent } from '@/hooks/useCookieConsent';
 import { Link } from 'react-router-dom';
 
@@ -92,9 +92,7 @@ export default function PrivacyPolicyPage() {
                 </p>
                 <p className="text-sm text-purple-900">
                   ReExpressTrack<br />
-                  64 Route de Mouy, 60290 Cauffry, France<br />
-                  Email : <a href="mailto:privacy@reexpresstrack.com" className="text-purple-600 underline">privacy@reexpresstrack.com</a><br />
-                  Téléphone : <a href="tel:+33614191518" className="text-purple-600 underline">+33 6 14 19 15 18</a>
+                  Email : <a href="mailto:privacy@reexpresstrack.com" className="text-purple-600 underline">privacy@reexpresstrack.com</a>
                 </p>
               </div>
             </div>
@@ -534,22 +532,6 @@ export default function PrivacyPolicyPage() {
                     </a>
                   </div>
                 </div>
-                <div className="flex items-start gap-3">
-                  <Phone className="w-5 h-5 text-purple-600 mt-0.5" />
-                  <div>
-                    <p className="font-semibold">Par téléphone :</p>
-                    <a href="tel:+33614191518" className="text-purple-600 underline">
-                      +33 6 14 19 15 18
-                    </a>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <FileText className="w-5 h-5 text-purple-600 mt-0.5" />
-                  <div>
-                    <p className="font-semibold">Par courrier :</p>
-                    <p>ReExpressTrack - Service Données Personnelles<br />64 Route de Mouy, 60290 Cauffry, France</p>
-                  </div>
-                </div>
               </div>
               <p className="text-xs text-gray-600 mt-4">
                 Nous répondons à toutes les demandes dans un délai d'un mois maximum. Une pièce d'identité peut être requise
@@ -646,8 +628,8 @@ export default function PrivacyPolicyPage() {
             <p className="text-gray-700 mb-6">
               Pour toute question concernant cette politique de confidentialité ou vos données personnelles, n'hésitez pas à nous contacter :
             </p>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="bg-white rounded-xl p-5 shadow-md">
+            <div className="max-w-md mx-auto">
+              <div className="bg-white rounded-xl p-6 shadow-md">
                 <div className="flex items-center gap-3 mb-3">
                   <Mail className="w-6 h-6 text-orange-600" />
                   <h3 className="font-bold text-gray-900">Email</h3>
@@ -656,30 +638,6 @@ export default function PrivacyPolicyPage() {
                   privacy@reexpresstrack.com
                 </a>
                 <p className="text-xs text-gray-600 mt-2">Réponse sous 48h ouvrées</p>
-              </div>
-
-              <div className="bg-white rounded-xl p-5 shadow-md">
-                <div className="flex items-center gap-3 mb-3">
-                  <Phone className="w-6 h-6 text-pink-600" />
-                  <h3 className="font-bold text-gray-900">Téléphone</h3>
-                </div>
-                <a href="tel:+33614191518" className="text-pink-600 underline font-semibold">
-                  +33 6 14 19 15 18
-                </a>
-                <p className="text-xs text-gray-600 mt-2">Lun-Ven : 9h-18h</p>
-              </div>
-
-              <div className="bg-white rounded-xl p-5 shadow-md md:col-span-2">
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="text-2xl">📍</span>
-                  <h3 className="font-bold text-gray-900">Adresse postale</h3>
-                </div>
-                <p className="text-gray-700">
-                  ReExpressTrack - Service Données Personnelles<br />
-                  64 Route de Mouy<br />
-                  60290 Cauffry<br />
-                  France
-                </p>
               </div>
             </div>
           </section>
