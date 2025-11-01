@@ -1,0 +1,102 @@
+{
+  "recommendations": [
+    // ============================================
+    // ESSENTIELS
+    // ============================================
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "editorconfig.editorconfig",
+    
+    // ============================================
+    // TYPESCRIPT & JAVASCRIPT
+    // ============================================
+    "ms-vscode.vscode-typescript-next",
+    "usernamehw.errorlens",
+    "wix.vscode-import-cost",
+    
+    // ============================================
+    // REACT
+    // ============================================
+    "dsznajder.es7-react-js-snippets",
+    "burkeholland.simple-react-snippets",
+    
+    // ============================================
+    // TAILWIND CSS
+    // ============================================
+    "bradlc.vscode-tailwindcss",
+    
+    // ============================================
+    // PRISMA
+    // ============================================
+    "prisma.prisma",
+    
+    // ============================================
+    // DOCKER
+    // ============================================
+    "ms-azuretools.vscode-docker",
+    "ms-vscode-remote.remote-containers",
+    
+    // ============================================
+    // GIT
+    // ============================================
+    "eamodio.gitlens",
+    "mhutchie.git-graph",
+    "github.vscode-pull-request-github",
+    
+    // ============================================
+    // DATABASE
+    // ============================================
+    "ckolkman.vscode-postgres",
+    "redis.redis-for-vscode",
+    
+    // ============================================
+    // API & REST
+    // ============================================
+    "humao.rest-client",
+    "rangav.vscode-thunder-client",
+    
+    // ============================================
+    // MARKDOWN
+    // ============================================
+    "yzhang.markdown-all-in-one",
+    "davidanson.vscode-markdownlint",
+    
+    // ============================================
+    // YAML
+    // ============================================
+    "redhat.vscode-yaml",
+    
+    // ============================================
+    // ENV FILES
+    // ============================================
+    "mikestead.dotenv",
+    
+    // ============================================
+    // CODE QUALITY
+    // ============================================
+    "streetsidesoftware.code-spell-checker",
+    "streetsidesoftware.code-spell-checker-french",
+    "visualstudioexptteam.vscodeintellicode",
+    
+    // ============================================
+    // PRODUCTIVITY
+    // ============================================
+    "christian-kohler.path-intellisense",
+    "formulahendry.auto-rename-tag",
+    "formulahendry.auto-close-tag",
+    "naumovs.color-highlight",
+    "pkief.material-icon-theme",
+    
+    // ============================================
+    // TESTING
+    // ============================================
+    "orta.vscode-jest",
+    "vitest.explorer",
+    
+    // ============================================
+    // SNIPPETS
+    // ============================================
+    "wayou.vscode-todo-highlight",
+    "gruntfuggly.todo-tree"
+  ]
+}

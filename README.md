@@ -68,12 +68,13 @@ reexpresstrack/
 ├── backend/                    # API Backend
 │   ├── src/
 │   │   ├── modules/           # Modules fonctionnels
-│   │   │   ├── auth/         # Authentification
-│   │   │   ├── users/        # Gestion utilisateurs
-│   │   │   ├── packages/     # Gestion colis
-│   │   │   ├── quotes/       # Gestion devis
-│   │   │   ├── payments/     # Gestion paiements
-│   │   │   └── admin/        # Administration
+│   │   │   ├── auth/         # Authentification ✅
+│   │   │   ├── users/        # Gestion utilisateurs ✅
+│   │   │   ├── packages/     # Gestion colis ✅
+│   │   │   ├── quotes/       # Gestion devis ✅
+│   │   │   ├── payments/     # Gestion paiements ✅
+│   │   │   ├── admin/        # Administration ✅
+│   │   │   └── support/      # Support client ✅
 │   │   ├── common/           # Code partagé
 │   │   │   ├── database/    # Connexion DB
 │   │   │   ├── cache/       # Redis
@@ -519,18 +520,31 @@ docker-compose exec redis redis-cli
 
 ## 📈 Roadmap
 
+### Backend (100% ✅)
 - [x] Architecture de base
 - [x] Authentification JWT
-- [x] CRUD Utilisateurs
-- [x] CRUD Colis
-- [x] Système de devis
-- [x] Intégration Stripe
-- [ ] Intégration 17Track complète
+- [x] Module Users (profils, adresses, KYC)
+- [x] Module Packages (colis, photos, tracking)
+- [x] Module Quotes (devis multi-transporteurs, PDF)
+- [x] Module Payments (Stripe, webhooks, remboursements)
+- [x] Module Admin (dashboard, gestion complète)
+- [x] Module Support (tickets, messagerie)
+- [x] Intégration 17Track API
+- [x] Intégration Stripe complète
+
+### Frontend (À venir)
+- [ ] Interface utilisateur React
+- [ ] Dashboard client
+- [ ] Dashboard admin
+- [ ] Interface support
 - [ ] Notifications temps réel (WebSocket)
 - [ ] Progressive Web App (PWA)
+
+### Futur
 - [ ] Système de parrainage
 - [ ] IA pour détection contenu colis
 - [ ] App mobile React Native
+- [ ] Tests automatisés (Jest, Playwright)
 
 ---
 

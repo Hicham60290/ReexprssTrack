@@ -1,0 +1,435 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// AUTHENTIFICATION & UTILISATEURS
+// ============================================
+
+model User {
+  id              String    @id @default(uuid()) @db.Uuid
+  email           String    @unique @db.VarChar(255)
+  passwordHash    String    @map("password_hash") @db.VarChar(255)
+  role            UserRole  @default(USER)
+  emailVerified   Boolean   @default(false) @map("email_verified")
+  
+  // Relations
+  profile         Profile?
+  packages        Package[]
+  quotes          Quote[]
+  payments        Payment[]
+  subscriptions   Subscription[]
+  frenchAddresses FrenchAddress[]
+  supportMessages SupportMessage[]
+  notifications   Notification[]
+  auditLogs       AuditLog[]
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+model Profile {
+  id          String  @id @db.Uuid
+  user        User    @relation(fields: [id], references: [id], onDelete: Cascade)
+  
+  firstName   String?  @map("first_name") @db.VarChar(100)
+  lastName    String?  @map("last_name") @db.VarChar(100)
+  phone       String?  @db.VarChar(20)
+  company     String?  @db.VarChar(255)
+  address     String?  @db.Text
+  postalCode  String?  @map("postal_code") @db.VarChar(10)
+  city        String?  @db.VarChar(100)
+  territory   String?  @db.VarChar(50)
+  
+  kycStatus   KycStatus @default(PENDING) @map("kyc_status")
+  
+  // Préférences
+  language    String   @default("fr") @db.VarChar(5)
+  timezone    String   @default("Europe/Paris") @db.VarChar(50)
+  currency    String   @default("EUR") @db.VarChar(3)
+  
+  // Marketing
+  acceptMarketing Boolean @default(false) @map("accept_marketing")
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("profiles")
+}
+
+enum KycStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  UNDER_REVIEW
+}
+
+// ============================================
+// ADRESSES FRANÇAISES
+// ============================================
+
+model FrenchAddress {
+  id            String  @id @default(uuid()) @db.Uuid
+  userId        String  @map("user_id") @db.Uuid
+  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  addressLine1  String  @map("address_line_1") @db.VarChar(255)
+  addressLine2  String? @map("address_line_2") @db.VarChar(255)
+  postalCode    String  @map("postal_code") @db.VarChar(10)
+  city          String  @db.VarChar(100)
+  
+  // Code référence unique pour l'utilisateur (ex: REEXPR-1234)
+  referenceCode String  @unique @map("reference_code") @db.VarChar(50)
+  
+  isActive      Boolean @default(true) @map("is_active")
+  
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("french_addresses")
+}
+
+// ============================================
+// COLIS
+// ============================================
+
+model Package {
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  trackingNumber  String?   @unique @map("tracking_number") @db.VarChar(100)
+  carrier         Int?      // 17Track carrier code
+  carrierName     String?   @map("carrier_name") @db.VarChar(100)
+  description     String?   @db.Text
+  weight          Decimal?  @db.Decimal(10, 2)
+
+  // Dimensions stockées en JSON: {length, width, height}
+  dimensions      Json?
+
+  status          PackageStatus @default(ANNOUNCED)
+  
+  receivedAt      DateTime? @map("received_at")
+  
+  // Photos stockées en array JSON: [{url, caption, uploadedAt}]
+  photos          Json[]    @default([])
+  
+  // Stockage
+  storageStartDate DateTime? @map("storage_start_date")
+  storageFees      Decimal   @default(0) @map("storage_fees") @db.Decimal(10, 2)
+  
+  // Relation devis
+  quoteId         String?   @map("quote_id") @db.Uuid
+  quote           Quote?    @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  
+  // Métadonnées flexibles
+  metadata        Json?
+  
+  // Relations
+  trackingEvents  TrackingEvent[]
+  
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([status])
+  @@index([trackingNumber])
+  @@map("packages")
+}
+
+enum PackageStatus {
+  ANNOUNCED         // Annoncé par le client
+  IN_TRANSIT        // En transit vers entrepôt
+  RECEIVED          // Reçu en entrepôt
+  STORED            // En stockage
+  QUOTE_REQUESTED   // Devis demandé
+  QUOTE_READY       // Devis prêt
+  PAID              // Payé
+  PREPARING         // En préparation
+  SHIPPED           // Expédié vers destination finale
+  DELIVERED         // Livré
+  CANCELLED         // Annulé
+  RETURNED          // Retourné
+}
+
+// ============================================
+// SUIVI DES COLIS
+// ============================================
+
+model TrackingEvent {
+  id          String   @id @default(uuid()) @db.Uuid
+  packageId   String   @map("package_id") @db.Uuid
+  package     Package  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  
+  eventType   String   @map("event_type") @db.VarChar(100)
+  description String?  @db.Text
+  location    String?  @db.VarChar(255)
+  
+  timestamp   DateTime
+  
+  // Données brutes de l'API de tracking
+  rawData     Json?    @map("raw_data")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([packageId])
+  @@map("tracking_events")
+}
+
+// ============================================
+// DEVIS
+// ============================================
+
+model Quote {
+  id                  String      @id @default(uuid()) @db.Uuid
+  userId              String      @map("user_id") @db.Uuid
+  user                User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  packageId           String?     @map("package_id") @db.Uuid
+  packages            Package[]
+  
+  // Adresse de destination en JSON
+  destinationAddress  Json        @map("destination_address")
+  
+  // Options transporteurs: [{name, price, transitTime, serviceLevel, trackingIncluded}]
+  carrierOptions      Json[]      @default([]) @map("carrier_options")
+  
+  selectedCarrier     String?     @map("selected_carrier") @db.VarChar(100)
+  
+  totalAmount         Decimal     @map("total_amount") @db.Decimal(10, 2)
+  
+  status              QuoteStatus @default(PENDING)
+  
+  validUntil          DateTime?   @map("valid_until")
+  
+  pdfUrl              String?     @map("pdf_url") @db.Text
+  
+  // Relations
+  payments            Payment[]
+  
+  createdAt           DateTime    @default(now()) @map("created_at")
+  updatedAt           DateTime    @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([status])
+  @@map("quotes")
+}
+
+enum QuoteStatus {
+  PENDING     // En attente de sélection
+  ACCEPTED    // Accepté par le client
+  PAID        // Payé
+  EXPIRED     // Expiré
+  CANCELLED   // Annulé
+}
+
+// ============================================
+// PAIEMENTS
+// ============================================
+
+model Payment {
+  id                String        @id @default(uuid()) @db.Uuid
+  userId            String        @map("user_id") @db.Uuid
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  quoteId           String?       @map("quote_id") @db.Uuid
+  quote             Quote?        @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  
+  stripePaymentId   String?       @unique @map("stripe_payment_id") @db.VarChar(255)
+  
+  amount            Decimal       @db.Decimal(10, 2)
+  currency          String        @default("EUR") @db.VarChar(3)
+  
+  status            PaymentStatus @default(PENDING)
+  
+  paymentMethod     String?       @map("payment_method") @db.VarChar(50)
+  
+  // Métadonnées Stripe ou autres
+  metadata          Json?
+  
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([status])
+  @@map("payments")
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+// ============================================
+// ABONNEMENTS
+// ============================================
+
+model Subscription {
+  id                    String             @id @default(uuid()) @db.Uuid
+  userId                String             @map("user_id") @db.Uuid
+  user                  User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  stripeSubscriptionId  String?            @unique @map("stripe_subscription_id") @db.VarChar(255)
+  
+  planType              SubscriptionPlan   @map("plan_type")
+  
+  status                SubscriptionStatus @default(ACTIVE)
+  
+  currentPeriodStart    DateTime?          @map("current_period_start")
+  currentPeriodEnd      DateTime?          @map("current_period_end")
+  
+  cancelAtPeriodEnd     Boolean            @default(false) @map("cancel_at_period_end")
+  
+  createdAt             DateTime           @default(now()) @map("created_at")
+  updatedAt             DateTime           @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("subscriptions")
+}
+
+enum SubscriptionPlan {
+  FREE
+  BASIC
+  PREMIUM
+  BUSINESS
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
+// ============================================
+// SUPPORT
+// ============================================
+
+model SupportMessage {
+  id        String                @id @default(uuid()) @db.Uuid
+  userId    String                @map("user_id") @db.Uuid
+  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  subject   String                @db.VarChar(255)
+  status    SupportStatus         @default(OPEN)
+  priority  SupportPriority       @default(NORMAL)
+  
+  history   SupportMessageHistory[]
+  
+  createdAt DateTime              @default(now()) @map("created_at")
+  updatedAt DateTime              @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([status])
+  @@map("support_messages")
+}
+
+enum SupportStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_CUSTOMER
+  RESOLVED
+  CLOSED
+}
+
+enum SupportPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+model SupportMessageHistory {
+  id        String         @id @default(uuid()) @db.Uuid
+  messageId String         @map("message_id") @db.Uuid
+  message   SupportMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  
+  senderType String        @map("sender_type") @db.VarChar(20) // 'user' or 'admin'
+  senderId   String        @map("sender_id") @db.Uuid
+  
+  content    String        @db.Text
+  
+  // Pièces jointes: [{url, filename, size}]
+  attachments Json[]       @default([])
+  
+  createdAt  DateTime      @default(now()) @map("created_at")
+
+  @@index([messageId])
+  @@map("support_messages_history")
+}
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+model Notification {
+  id      String   @id @default(uuid()) @db.Uuid
+  userId  String   @map("user_id") @db.Uuid
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type    NotificationType
+  title   String   @db.VarChar(255)
+  message String   @db.Text
+  
+  read    Boolean  @default(false)
+  link    String?  @db.Text
+  
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId, read])
+  @@map("notifications")
+}
+
+enum NotificationType {
+  PACKAGE_RECEIVED
+  QUOTE_READY
+  PAYMENT_SUCCESS
+  PACKAGE_SHIPPED
+  PACKAGE_DELIVERED
+  STORAGE_WARNING
+  SYSTEM
+}
+
+// ============================================
+// AUDIT & LOGS
+// ============================================
+
+model AuditLog {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String?  @map("user_id") @db.Uuid
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  action       String   @db.VarChar(100)
+  resourceType String?  @map("resource_type") @db.VarChar(50)
+  resourceId   String?  @map("resource_id") @db.Uuid
+  
+  ipAddress    String?  @map("ip_address") @db.Inet
+  userAgent    String?  @map("user_agent") @db.Text
+  
+  metadata     Json?
+  
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([action])
+  @@map("audit_logs")
+}

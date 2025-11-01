@@ -1,0 +1,332 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    // ============================================
+    // DOCKER
+    // ============================================
+    {
+      "label": "🐳 Docker: Start All Services",
+      "type": "shell",
+      "command": "docker-compose up -d",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "🐳 Docker: Stop All Services",
+      "type": "shell",
+      "command": "docker-compose down",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "showReuseMessage": false
+      }
+    },
+    {
+      "label": "🐳 Docker: Rebuild Services",
+      "type": "shell",
+      "command": "docker-compose up -d --build",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "showReuseMessage": false
+      }
+    },
+    {
+      "label": "🐳 Docker: View Logs",
+      "type": "shell",
+      "command": "docker-compose logs -f",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "showReuseMessage": false
+      },
+      "isBackground": true
+    },
+    {
+      "label": "🐳 Docker: Clean All",
+      "type": "shell",
+      "command": "docker-compose down -v && docker system prune -f",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+
+    // ============================================
+    // BACKEND
+    // ============================================
+    {
+      "label": "🚀 Backend: Dev",
+      "type": "npm",
+      "script": "dev",
+      "path": "backend/",
+      "problemMatcher": ["$tsc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "showReuseMessage": false
+      },
+      "isBackground": true
+    },
+    {
+      "label": "🚀 Backend: Build",
+      "type": "npm",
+      "script": "build",
+      "path": "backend/",
+      "problemMatcher": ["$tsc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "🚀 Backend: Start",
+      "type": "npm",
+      "script": "start",
+      "path": "backend/",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "dependsOn": ["🚀 Backend: Build"]
+    },
+    {
+      "label": "🧪 Backend: Test",
+      "type": "npm",
+      "script": "test",
+      "path": "backend/",
+      "problemMatcher": ["$tsc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "🧪 Backend: Test Coverage",
+      "type": "npm",
+      "script": "test:coverage",
+      "path": "backend/",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+
+    // ============================================
+    // PRISMA
+    // ============================================
+    {
+      "label": "🗄️ Prisma: Generate",
+      "type": "npm",
+      "script": "prisma:generate",
+      "path": "backend/",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "🗄️ Prisma: Migrate Dev",
+      "type": "npm",
+      "script": "prisma:migrate",
+      "path": "backend/",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "🗄️ Prisma: Studio",
+      "type": "npm",
+      "script": "prisma:studio",
+      "path": "backend/",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "isBackground": true
+    },
+    {
+      "label": "🗄️ Prisma: Seed",
+      "type": "npm",
+      "script": "prisma:seed",
+      "path": "backend/",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+
+    // ============================================
+    // FRONTEND
+    // ============================================
+    {
+      "label": "🌐 Frontend: Dev",
+      "type": "npm",
+      "script": "dev",
+      "path": "frontend/",
+      "problemMatcher": ["$tsc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "showReuseMessage": false
+      },
+      "isBackground": true
+    },
+    {
+      "label": "🌐 Frontend: Build",
+      "type": "npm",
+      "script": "build",
+      "path": "frontend/",
+      "problemMatcher": ["$tsc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "🌐 Frontend: Preview",
+      "type": "npm",
+      "script": "preview",
+      "path": "frontend/",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "dependsOn": ["🌐 Frontend: Build"]
+    },
+    {
+      "label": "🧪 Frontend: Test",
+      "type": "npm",
+      "script": "test",
+      "path": "frontend/",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+
+    // ============================================
+    // CODE QUALITY
+    // ============================================
+    {
+      "label": "🔍 Lint: Backend",
+      "type": "npm",
+      "script": "lint",
+      "path": "backend/",
+      "problemMatcher": ["$eslint-stylish"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "🔍 Lint: Frontend",
+      "type": "npm",
+      "script": "lint",
+      "path": "frontend/",
+      "problemMatcher": ["$eslint-stylish"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "🔍 Lint: All",
+      "dependsOn": ["🔍 Lint: Backend", "🔍 Lint: Frontend"],
+      "problemMatcher": []
+    },
+    {
+      "label": "✨ Format: Backend",
+      "type": "npm",
+      "script": "format",
+      "path": "backend/",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "✨ Format: Frontend",
+      "type": "npm",
+      "script": "format",
+      "path": "frontend/",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "✨ Format: All",
+      "dependsOn": ["✨ Format: Backend", "✨ Format: Frontend"],
+      "problemMatcher": []
+    },
+
+    // ============================================
+    // UTILITIES
+    // ============================================
+    {
+      "label": "📦 Install: Backend Dependencies",
+      "type": "npm",
+      "script": "install",
+      "path": "backend/",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "📦 Install: Frontend Dependencies",
+      "type": "npm",
+      "script": "install",
+      "path": "frontend/",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "📦 Install: All Dependencies",
+      "dependsOn": [
+        "📦 Install: Backend Dependencies",
+        "📦 Install: Frontend Dependencies"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "🧹 Clean: All",
+      "type": "shell",
+      "command": "rm -rf backend/node_modules frontend/node_modules backend/dist frontend/dist",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    }
+  ]
+}

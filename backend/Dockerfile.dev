@@ -1,0 +1,41 @@
+# ============================================
+# DOCKERFILE POUR DÉVELOPPEMENT
+# ============================================
+# Ce fichier est optimisé pour le développement:
+# - Hot reload avec tsx watch
+# - Volumes montés
+# - Port de débogage exposé
+# ============================================
+
+FROM node:20-alpine
+
+# Installer les outils de développement
+RUN apk add --no-cache \
+    bash \
+    curl \
+    git
+
+WORKDIR /app
+
+# Copier les fichiers de dépendances
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# Installer toutes les dépendances (dev incluses)
+RUN npm install
+
+# Générer le client Prisma
+RUN npx prisma generate
+
+# Copier le reste du code (sera écrasé par les volumes en dev)
+COPY . .
+
+# Exposer les ports
+EXPOSE 3000 9229
+
+# Variables d'environnement
+ENV NODE_ENV=development
+ENV PORT=3000
+
+# Commande de démarrage (avec débogage)
+CMD ["npm", "run", "dev", "--", "--inspect=0.0.0.0:9229"]
