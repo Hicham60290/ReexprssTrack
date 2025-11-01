@@ -14,7 +14,6 @@ export default defineConfig({
   },
   plugins: [
     react({
-      jsxRuntime: 'automatic',
       // Configuration ultra-compatible
       jsxImportSource: 'react'
     })
@@ -34,8 +33,8 @@ export default defineConfig({
     cssCodeSplit: false, // CSS dans un seul fichier
     assetsInlineLimit: 2048,
     reportCompressedSize: false,
-    // Target ultra-compatible pour tous navigateurs
-    target: ['es2015', 'chrome60', 'firefox55', 'safari11', 'edge16']
+    // Target moderne pour navigateurs récents
+    target: 'esnext'
   },
   resolve: {
     alias: {
@@ -57,10 +56,6 @@ export default defineConfig({
     force: true
   },
   esbuild: {
-    target: 'es2015',
-    // Support navigateurs anciens
-    supported: {
-      'dynamic-import': false
-    }
+    target: 'esnext'
   }
 })
