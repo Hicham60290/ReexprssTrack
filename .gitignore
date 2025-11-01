@@ -12,6 +12,7 @@ build/
 tsconfig.tsbuildinfo
 
 # Environment
+.env
 .env.local
 .env.production
 .env.*.local
@@ -37,3 +38,8 @@ yarn-error.log*
 .tmp/
 temp/
 *.tmp
+
+# Archives (uploaded source files)
+*.zip
+*.tar.gz
+*.rar
