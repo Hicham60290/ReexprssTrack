@@ -1,0 +1,152 @@
+services:
+  # ===========================================
+  # POSTGRESQL DATABASE
+  # ===========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: reexpresstrack_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: reexpresstrack
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=fr_FR.UTF-8"
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - reexpresstrack_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===========================================
+  # REDIS CACHE & QUEUE
+  # ===========================================
+  redis:
+    image: redis:7-alpine
+    container_name: reexpresstrack_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass redis_password
+    ports:
+      - "127.0.0.1:6380:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - reexpresstrack_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "redis_password", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===========================================
+  # MINIO (S3-compatible Storage)
+  # ===========================================
+  minio:
+    image: minio/minio:latest
+    container_name: reexpresstrack_minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - reexpresstrack_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # ===========================================
+  # BACKEND API
+  # ===========================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: reexpresstrack_backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - reexpresstrack_network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ===========================================
+  # FRONTEND (React + Vite)
+  # ===========================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: reexpresstrack_frontend
+    restart: unless-stopped
+    env_file:
+      - ./frontend/.env
+    ports:
+      - "127.0.0.1:8080:80"
+    depends_on:
+      - backend
+    networks:
+      - reexpresstrack_network
+
+# ===========================================
+# VOLUMES
+# ===========================================
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  minio_data:
+    driver: local
+
+# ===========================================
+# NETWORKS
+# ===========================================
+networks:
+  reexpresstrack_network:
+    driver: bridge
+
+# ===========================================
+# PRODUCTION DOCKER COMPOSE
+# ===========================================
+#
+# Start all services:
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# View logs:
+#   docker compose -f docker-compose.prod.yml logs -f [service_name]
+#
+# Stop all services:
+#   docker compose -f docker-compose.prod.yml down
+#
+# Rebuild and restart:
+#   docker compose -f docker-compose.prod.yml up -d --build --force-recreate
+#
+# ===========================================

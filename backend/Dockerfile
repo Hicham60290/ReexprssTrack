@@ -1,61 +1,38 @@
 # ============================================
-# STAGE 1: BUILD
-# ============================================
-FROM node:20-alpine AS builder
-
-WORKDIR /app
-
-# Copier les fichiers de dépendances
-COPY package*.json ./
-COPY prisma ./prisma/
-
-# Installer les dépendances
-RUN npm ci
-
-# Copier le code source
-COPY . .
-
-# Générer le client Prisma
-RUN npx prisma generate
-
-# Build de l'application TypeScript
-RUN npm run build
-
-# ============================================
-# STAGE 2: PRODUCTION
+# PRODUCTION DOCKERFILE - Using tsx runtime
 # ============================================
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Installer dumb-init pour gérer les signaux correctement
-RUN apk add --no-cache dumb-init
+# Install system dependencies
+RUN apk add --no-cache dumb-init curl
 
-# Copier les dépendances de production uniquement
+# Copy package files
 COPY package*.json ./
-RUN npm ci --only=production
+COPY prisma ./prisma/
 
-# Copier le client Prisma généré
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+# Install ALL dependencies (including devDependencies for tsx)
+RUN npm install
 
-# Copier le code compilé
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/prisma ./prisma
+# Generate Prisma client
+RUN npx prisma generate
 
-# Créer un utilisateur non-root
+# Copy source code
+COPY . .
+
+# Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
+    adduser -S nodejs -u 1001 && \
+    chown -R nodejs:nodejs /app
 
-# Changer les permissions
-RUN chown -R nodejs:nodejs /app
-
-# Utiliser l'utilisateur non-root
+# Use non-root user
 USER nodejs
 
-# Exposer le port
+# Expose port
 EXPOSE 3000
 
-# Variables d'environnement par défaut
+# Environment variables
 ENV NODE_ENV=production
 ENV PORT=3000
 
@@ -63,8 +40,8 @@ ENV PORT=3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Point d'entrée avec dumb-init
+# Entrypoint with dumb-init
 ENTRYPOINT ["dumb-init", "--"]
 
-# Commande de démarrage
-CMD ["node", "dist/server.js"]
+# Start with tsx (TypeScript runtime without compilation)
+CMD ["npx", "tsx", "src/server.ts"]
