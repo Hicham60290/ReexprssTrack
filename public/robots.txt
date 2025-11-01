@@ -1,0 +1,48 @@
+
+User-agent: *
+
+# Pages publiques - Blog et contenu SEO
+Allow: /blog
+Allow: /blog/abonnements-domtom-tarifs-preferentiels
+Allow: /blog/achat-pour-moi-assistant-personnel
+Allow: /blog/achat-pour-moi-processus-complet
+Allow: /blog/calculateur-tarifs-expedition-domtom
+Allow: /blog/engagement-environnemental-reexpresstrack
+Allow: /blog/guide-achat-amazon-france-domtom
+Allow: /blog/service-retour-dom-tom-france
+Allow: /blog/suivi-colis-temps-reel-domtom
+Allow: /blog/shein-maroc-shopping-livraison-domtom
+
+# Pages publiques - Services
+Allow: /
+Allow: /calculateur
+Allow: /tarifs
+Allow: /inscription
+Allow: /abonnement
+Allow: /achat-pour-moi
+Allow: /gestion-retour
+Allow: /retour-colis-dom-tom
+Allow: /aide
+Allow: /contact
+Allow: /faq
+
+# Pages légales
+Allow: /cgv
+Allow: /confidentialite
+Allow: /mentions-legales
+
+# Pages privées - Accès restreint
+Disallow: /connexion
+Disallow: /login
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /packages
+Disallow: /suivi
+Disallow: /declarer-colis
+
+# Éviter les paramètres de tracking
+Disallow: /*?utm_*
+Disallow: /*?ref=*
+Disallow: /*?fbclid=*
+
+Sitemap: https://example.com/sitemap.xml

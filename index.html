@@ -1,0 +1,93 @@
+
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ReExpressTrack - Service de réexpédition DOM-TOM</title>
+    <meta name="description" content="Service de réexpédition fiable pour les DOM-TOM. Recevez vos colis depuis la France métropolitaine avec suivi temps réel et tarifs préférentiels." />
+    <meta name="keywords" content="réexpédition DOM-TOM, livraison Guadeloupe, Martinique, Guyane, Réunion, suivi colis, transport international" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://reexpresstrack.com/" />
+    <meta property="og:title" content="ReExpressTrack - Service de réexpédition DOM-TOM" />
+    <meta property="og:description" content="Service de réexpédition fiable pour les DOM-TOM. Recevez vos colis depuis la France métropolitaine avec suivi temps réel et tarifs préférentiels." />
+    <meta property="og:image" content="/pwa-512x512.png" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://reexpresstrack.com/" />
+    <meta property="twitter:title" content="ReExpressTrack - Service de réexpédition DOM-TOM" />
+    <meta property="twitter:description" content="Service de réexpédition fiable pour les DOM-TOM. Recevez vos colis depuis la France métropolitaine avec suivi temps réel et tarifs préférentiels." />
+    <meta property="twitter:image" content="/pwa-512x512.png" />
+
+    <!-- Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#14B8A6" />
+    
+    <!-- Apple Touch Icon -->
+    <link rel="apple-touch-icon" href="/pwa-192x192.png" />
+    
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
+    <!-- Remix Icon -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet" />
+    
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "ReExpressTrack",
+      "url": "https://reexpresstrack.com",
+      "logo": "https://reexpresstrack.com/pwa-512x512.png",
+      "description": "Service de réexpédition fiable pour les DOM-TOM",
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "FR"
+      },
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "telephone": "+33-1-23-45-67-89",
+        "contactType": "customer service"
+      }
+    }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Readdy Agent Widget -->
+    <script 
+      src="https://readdy.ai/api/public/assistant/widget?projectId=2024122701294966766" 
+      mode="hybrid"
+      voice-show-transcript="true"
+      theme="light"
+      position="bottom-right"
+      size="compact"
+      accent-color="#14B8A6"
+      button-base-color="#1F2937" 
+      button-accent-color="#FFFFFF"
+      main-label="Discuter avec nous"
+      start-button-text="Commencer"
+      end-button-text="Terminer l'appel"
+      empty-chat-message="Bonjour ! Comment puis-je vous aider avec vos envois DOM-TOM ?"
+      empty-voice-message="Bonjour ! Parlez-moi de vos besoins d'expédition"
+    ></script>
+  </body>
+</html>
