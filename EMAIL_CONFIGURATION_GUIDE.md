@@ -5,13 +5,14 @@ Ce guide explique comment configurer et utiliser le système d'emails transactio
 ## 📋 Table des Matières
 
 1. [Types d'Emails Disponibles](#types-demails-disponibles)
-2. [Configuration SMTP](#configuration-smtp)
-3. [Configuration Gmail](#configuration-gmail)
-4. [Configuration Autres Fournisseurs](#configuration-autres-fournisseurs)
-5. [Templates d'Emails](#templates-demails)
-6. [Utilisation du Service](#utilisation-du-service)
-7. [Test des Emails](#test-des-emails)
-8. [Dépannage](#dépannage)
+2. [🌟 Configuration Resend (Recommandé)](#-configuration-resend-recommandé)
+3. [Configuration SMTP](#configuration-smtp)
+4. [Configuration Gmail](#configuration-gmail)
+5. [Configuration Autres Fournisseurs](#configuration-autres-fournisseurs)
+6. [Templates d'Emails](#templates-demails)
+7. [Utilisation du Service](#utilisation-du-service)
+8. [Test des Emails](#test-des-emails)
+9. [Dépannage](#dépannage)
 
 ---
 
@@ -32,7 +33,94 @@ Le système envoie automatiquement les emails suivants :
 
 ---
 
+## 🌟 Configuration Resend (Recommandé)
+
+**Resend** est la solution moderne et simple pour envoyer des emails transactionnels. C'est l'option **recommandée** pour ReExpressTrack.
+
+### ✅ Pourquoi Resend ?
+
+- ✨ **Simple** : Pas de configuration SMTP complexe
+- 🚀 **Rapide** : API moderne et performante
+- 📊 **Dashboard** : Interface web pour voir tous vos emails
+- 💰 **Généreux** : 3 000 emails/mois gratuits, puis à partir de 20$/mois
+- 🔒 **Sécurisé** : Gestion automatique de l'authentification SPF/DKIM
+- 📈 **Analytique** : Taux d'ouverture, clics, bounces, etc.
+
+### 📝 Étape 1 : Créer un Compte Resend
+
+1. Allez sur https://resend.com
+2. Cliquez sur "Sign Up" (gratuit pour commencer)
+3. Vérifiez votre email
+
+### 🔑 Étape 2 : Obtenir votre API Key
+
+1. Connectez-vous à https://resend.com/api-keys
+2. Cliquez sur "Create API Key"
+3. Donnez-lui un nom : `ReExpressTrack Production`
+4. Sélectionnez les permissions : `Sending access`
+5. Cliquez sur "Add"
+6. **Copiez la clé API** (elle commence par `re_`)
+
+⚠️ **Important** : Sauvegardez cette clé, elle ne sera plus affichée !
+
+### 📧 Étape 3 : Vérifier votre Domaine (Optionnel mais Recommandé)
+
+Pour envoyer depuis `noreply@reexpresstrack.com` :
+
+1. Allez sur https://resend.com/domains
+2. Cliquez sur "Add Domain"
+3. Entrez `reexpresstrack.com`
+4. Ajoutez les enregistrements DNS fournis (SPF, DKIM, DMARC)
+5. Attendez la vérification (quelques minutes à quelques heures)
+
+Si vous ne vérifiez pas le domaine, vous pouvez utiliser `onboarding@resend.dev` pour les tests.
+
+### ⚙️ Étape 4 : Configurer le .env
+
+```bash
+# Choisir Resend comme provider
+EMAIL_PROVIDER=resend
+
+# Configuration commune
+EMAIL_FROM=noreply@reexpresstrack.com  # Ou onboarding@resend.dev pour tests
+EMAIL_FROM_NAME=ReExpressTrack
+
+# Votre clé API Resend
+RESEND_API_KEY=re_votre_cle_api_ici
+```
+
+### 📦 Étape 5 : Installer le Package
+
+```bash
+cd backend
+npm install resend
+```
+
+### ✅ Étape 6 : Redémarrer le Serveur
+
+```bash
+npm run dev
+```
+
+Vous devriez voir dans les logs :
+```
+✅ Resend email service initialized
+```
+
+### 🎯 C'est Tout !
+
+Votre système d'emails est maintenant configuré. Resend gère automatiquement :
+- ✅ L'authentification SPF/DKIM
+- ✅ La réputation d'envoi
+- ✅ Les bounces et plaintes
+- ✅ La délivrabilité optimale
+
+---
+
 ## ⚙️ Configuration SMTP
+
+> **Note** : Si vous utilisez Resend (recommandé), vous pouvez ignorer cette section SMTP.
+> Cette section est pour ceux qui préfèrent utiliser un serveur SMTP traditionnel (Gmail, SendGrid, Mailgun, etc.)
 
 ### Variables d'Environnement
 
@@ -271,7 +359,7 @@ if (prefs?.quoteCreated) {
 
 ## 🧪 Test des Emails
 
-### 1. Tester la Connexion SMTP
+### 1. Tester l'Envoi d'Email (Resend ou SMTP)
 
 Créer un script de test : `backend/scripts/test-email.ts`
 
@@ -322,6 +410,56 @@ Failed to send email to user@example.com: [erreur]
 ---
 
 ## 🔧 Dépannage
+
+### 🌟 Problèmes avec Resend
+
+#### Email non envoyé
+
+**Checklist :**
+- [ ] Package installé : `npm install resend`
+- [ ] RESEND_API_KEY correctement configurée dans .env
+- [ ] EMAIL_PROVIDER=resend dans .env
+- [ ] Clé API valide (commence par `re_`)
+- [ ] Domaine vérifié (ou utiliser onboarding@resend.dev pour tests)
+
+**Vérifier dans les logs :**
+```
+✅ Resend email service initialized  ← Doit apparaître
+Email sent successfully via Resend: <id>  ← Confirmation d'envoi
+```
+
+#### Erreur : "Missing API key"
+
+**Solution :**
+```bash
+# Vérifier dans .env
+RESEND_API_KEY=re_votre_cle_ici  # Doit commencer par "re_"
+```
+
+#### Erreur : "Domain not verified"
+
+Si vous utilisez votre propre domaine (`noreply@reexpresstrack.com`) :
+
+**Solution :**
+1. Aller sur https://resend.com/domains
+2. Ajouter les enregistrements DNS (SPF, DKIM, DMARC)
+3. Attendre la vérification
+
+**Alternative pour tests :**
+```bash
+EMAIL_FROM=onboarding@resend.dev  # Domaine pré-vérifié par Resend
+```
+
+#### Voir les emails envoyés
+
+Dashboard Resend : https://resend.com/emails
+- Tous les emails envoyés
+- Statuts (delivered, bounced, opened)
+- Logs complets
+
+---
+
+### 📧 Problèmes avec SMTP
 
 ### Erreur : "Invalid login"
 
@@ -411,11 +549,20 @@ Pour production, considérer :
 
 ## 🚀 Prochaines Étapes
 
-1. **Configurer SMTP** dans .env
-2. **Tester** l'envoi d'email
-3. **Intégrer** dans les actions utilisateur (inscription, reset, etc.)
-4. **Surveiller** les logs
-5. **Optimiser** les templates si besoin
+### Option 1 : Avec Resend (Recommandé) ⭐
+
+1. **Créer un compte** sur https://resend.com
+2. **Obtenir la clé API** et l'ajouter dans .env
+3. **Installer** : `npm install resend`
+4. **Tester** l'envoi d'email
+5. **Profiter** du dashboard et analytics
+
+### Option 2 : Avec SMTP
+
+1. **Configurer SMTP** dans .env (Gmail, SendGrid, etc.)
+2. **Tester** la connexion
+3. **Surveiller** les logs
+4. **Optimiser** la délivrabilité
 
 ---
 
@@ -423,11 +570,30 @@ Pour production, considérer :
 
 Si vous rencontrez des problèmes :
 
-1. Vérifier les logs du backend
-2. Tester la connexion SMTP manuellement
-3. Consulter la documentation du fournisseur SMTP
-4. Créer une issue sur GitHub
+1. **Resend** : Voir https://resend.com/docs
+2. **SMTP** : Consulter la documentation du fournisseur
+3. **Logs** : Vérifier les logs du backend
+4. **GitHub** : Créer une issue si nécessaire
 
 ---
 
-**Note** : En production, utilisez un service email dédié (SendGrid, Mailgun, etc.) plutôt que Gmail pour garantir une meilleure délivrabilité.
+## 💡 Recommandations
+
+### Pour le Développement
+- ✅ Utilisez **Resend** avec `onboarding@resend.dev`
+- Rapide à configurer, pas de DNS à configurer
+
+### Pour la Production
+- ⭐ **Resend** : Meilleur rapport simplicité/fonctionnalités
+- 📊 Dashboard inclus avec analytics
+- 🔒 Sécurité SPF/DKIM automatique
+- 💰 3000 emails/mois gratuits
+
+### Alternative Production
+- **SendGrid** : Si vous avez déjà un compte
+- **Mailgun** : Si vous envoyez beaucoup d'emails
+- **Gmail SMTP** : ❌ Non recommandé en production (limites strictes)
+
+---
+
+**✨ Note** : Resend est la solution moderne recommandée pour les emails transactionnels. Configuration en 5 minutes, pas de complexité SMTP !

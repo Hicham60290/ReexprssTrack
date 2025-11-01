@@ -38,17 +38,55 @@ interface QuoteCreatedData {
   quoteLink: string;
 }
 
+type EmailProvider = 'smtp' | 'resend';
+
 class EmailService {
-  private transporter: Transporter;
+  private transporter?: Transporter;
+  private resend?: any;
+  private provider: EmailProvider;
   private fromEmail: string;
   private fromName: string;
 
   constructor() {
-    // Configuration SMTP (à configurer dans .env)
-    this.fromEmail = process.env.SMTP_FROM_EMAIL || 'noreply@reexpresstrack.com';
-    this.fromName = process.env.SMTP_FROM_NAME || 'ReExpressTrack';
+    // Déterminer le provider d'email
+    this.provider = (process.env.EMAIL_PROVIDER as EmailProvider) || 'smtp';
+    this.fromEmail = process.env.EMAIL_FROM || process.env.SMTP_FROM_EMAIL || 'noreply@reexpresstrack.com';
+    this.fromName = process.env.EMAIL_FROM_NAME || process.env.SMTP_FROM_NAME || 'ReExpressTrack';
 
-    // Créer le transporteur Nodemailer
+    if (this.provider === 'resend') {
+      // Configuration Resend (plus simple et moderne)
+      this.initResend();
+    } else {
+      // Configuration SMTP traditionnelle
+      this.initSMTP();
+    }
+  }
+
+  /**
+   * Initialiser Resend
+   */
+  private async initResend() {
+    try {
+      const { Resend } = await import('resend');
+      const apiKey = process.env.RESEND_API_KEY;
+
+      if (!apiKey) {
+        logger.warn('⚠️ RESEND_API_KEY not configured. Email sending will fail.');
+        return;
+      }
+
+      this.resend = new Resend(apiKey);
+      logger.info('✅ Resend email service initialized');
+    } catch (error) {
+      logger.error('❌ Failed to initialize Resend:', error);
+      logger.info('💡 Install resend with: npm install resend');
+    }
+  }
+
+  /**
+   * Initialiser SMTP
+   */
+  private initSMTP() {
     this.transporter = nodemailer.createTransporter({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
       port: parseInt(process.env.SMTP_PORT || '587'),
@@ -65,7 +103,7 @@ class EmailService {
 
   private async verifyConnection() {
     try {
-      await this.transporter.verify();
+      await this.transporter?.verify();
       logger.info('✅ SMTP connection verified successfully');
     } catch (error) {
       logger.error('❌ SMTP connection failed:', error);
@@ -77,17 +115,35 @@ class EmailService {
    */
   async sendEmail(options: EmailOptions): Promise<boolean> {
     try {
-      const info = await this.transporter.sendMail({
-        from: `"${this.fromName}" <${this.fromEmail}>`,
-        to: options.to,
-        subject: options.subject,
-        html: options.html,
-        text: options.text || this.stripHtml(options.html),
-        attachments: options.attachments,
-      });
+      if (this.provider === 'resend' && this.resend) {
+        // Utiliser Resend
+        const result = await this.resend.emails.send({
+          from: `${this.fromName} <${this.fromEmail}>`,
+          to: options.to,
+          subject: options.subject,
+          html: options.html,
+          text: options.text || this.stripHtml(options.html),
+        });
 
-      logger.info(`Email sent successfully to ${options.to}: ${info.messageId}`);
-      return true;
+        logger.info(`Email sent successfully to ${options.to} via Resend: ${result.data?.id}`);
+        return true;
+      } else if (this.transporter) {
+        // Utiliser SMTP
+        const info = await this.transporter.sendMail({
+          from: `"${this.fromName}" <${this.fromEmail}>`,
+          to: options.to,
+          subject: options.subject,
+          html: options.html,
+          text: options.text || this.stripHtml(options.html),
+          attachments: options.attachments,
+        });
+
+        logger.info(`Email sent successfully to ${options.to} via SMTP: ${info.messageId}`);
+        return true;
+      } else {
+        logger.error('No email provider configured');
+        return false;
+      }
     } catch (error) {
       logger.error(`Failed to send email to ${options.to}:`, error);
       return false;
