@@ -12,6 +12,7 @@
       "@common/*": ["./common/*"],
       "@config/*": ["./config/*"],
       "@modules/*": ["./modules/*"],
+      "@services/*": ["./services/*"],
       "@types/*": ["./types/*"]
     },
     "resolveJsonModule": true,
