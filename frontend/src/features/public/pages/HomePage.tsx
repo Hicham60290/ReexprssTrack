@@ -1,15 +1,22 @@
-import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Package, TruckIcon, Shield, Clock, ArrowRight, Check, Sparkles, Globe } from 'lucide-react'
 import { Button } from '@/shared/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card'
 import PublicHeader from '../components/PublicHeader'
 import PublicFooter from '../components/PublicFooter'
+import SEO, { createOrganizationSchema, createServiceSchema, createBreadcrumbSchema } from '@/components/SEO'
 
 export default function HomePage() {
-  useEffect(() => {
-    document.title = 'ReExpressTrack - Service de réexpédition DOM-TOM et Maroc'
-  }, [])
+  const schema = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      createOrganizationSchema(),
+      createServiceSchema(),
+      createBreadcrumbSchema([
+        { name: 'Accueil', url: '/' }
+      ])
+    ]
+  }
 
   const features = [
     {
@@ -55,6 +62,13 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
+      <SEO
+        title="Accueil"
+        description="ReExpressTrack - Service professionnel de réexpédition de colis depuis la France vers les DOM-TOM (Guadeloupe, Martinique, Guyane, Réunion, Mayotte) et le Maroc. Économisez jusqu'à 60% sur vos frais d'expédition. Adresse française gratuite, suivi en temps réel 24/7."
+        keywords="réexpédition colis, DOM-TOM, Guadeloupe, Martinique, Guyane, Réunion, Mayotte, Maroc, livraison internationale, expédition France, adresse française, suivi colis, tracking, économie livraison, service réexpédition"
+        ogType="website"
+        schema={schema}
+      />
       <PublicHeader />
 
       {/* Hero Section with 3D Animated Bubbles */}

@@ -1,0 +1,64 @@
+# ReExpressTrack - Robots.txt
+
+# Allow all search engines
+User-agent: *
+Allow: /
+
+# Disallow admin and private areas
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /packages/
+Disallow: /quotes/
+Disallow: /profile/
+Disallow: /support/
+Disallow: /tracking/
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+
+# Disallow API endpoints
+Disallow: /api/
+
+# Allow public pages
+Allow: /
+Allow: /tarifs
+Allow: /faq
+Allow: /contact
+Allow: /calculateur
+Allow: /aide
+Allow: /abonnement
+Allow: /mentions-legales
+Allow: /cookie-policy
+Allow: /privacy
+
+# Sitemap location
+Sitemap: https://reexpresstrack.com/sitemap.xml
+
+# Crawl delay (optional - 1 second between requests)
+Crawl-delay: 1
+
+# Specific rules for major search engines
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+# Block bad bots
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /

@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Mail, Phone, MapPin, Send, Clock, Sparkles, CheckCircle } from 'lucide-react'
 import { Input } from '@/shared/components/ui/Input'
 import { Label } from '@/shared/components/ui/Label'
 import api from '@/shared/lib/api'
 import PublicHeader from '../components/PublicHeader'
 import PublicFooter from '../components/PublicFooter'
+import SEO, { createBreadcrumbSchema } from '@/components/SEO'
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -16,9 +17,10 @@ export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
 
-  useEffect(() => {
-    document.title = 'Contact - Nous contacter | ReExpressTrack'
-  }, [])
+  const schema = createBreadcrumbSchema([
+    { name: 'Accueil', url: '/' },
+    { name: 'Contact', url: '/contact' }
+  ])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -78,6 +80,12 @@ export default function ContactPage() {
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
+      <SEO
+        title="Contact - Nous Contacter"
+        description="Contactez ReExpressTrack pour toute question sur la réexpédition de colis vers les DOM-TOM et le Maroc. Support client disponible par email, téléphone ou formulaire. Réponse rapide garantie."
+        keywords="contact réexpédition, support client DOM-TOM, aide livraison internationale, service client ReExpressTrack, formulaire contact"
+        schema={schema}
+      />
       <PublicHeader />
 
       {/* Animated Background with Bubbles */}

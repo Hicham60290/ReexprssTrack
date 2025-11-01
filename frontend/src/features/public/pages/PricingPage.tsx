@@ -1,13 +1,14 @@
-import { useEffect } from 'react'
 import { Check, X, Sparkles, Crown, Zap, Star, TruckIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import PublicHeader from '../components/PublicHeader'
 import PublicFooter from '../components/PublicFooter'
+import SEO, { createBreadcrumbSchema } from '@/components/SEO'
 
 export default function PricingPage() {
-  useEffect(() => {
-    document.title = 'Tarifs - Nos offres | ReExpressTrack'
-  }, [])
+  const schema = createBreadcrumbSchema([
+    { name: 'Accueil', url: '/' },
+    { name: 'Tarifs', url: '/tarifs' }
+  ])
 
   const plans = [
     {
@@ -82,6 +83,12 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
+      <SEO
+        title="Tarifs & Abonnements"
+        description="Découvrez nos tarifs transparents pour la réexpédition de colis vers les DOM-TOM et le Maroc. Offre gratuite avec adresse française permanente. Premium à partir de 2,50€/mois avec 30% de réduction sur les frais. Pas de frais cachés."
+        keywords="tarifs réexpédition, prix livraison DOM-TOM, abonnement colis, tarif Guadeloupe, prix Martinique, livraison Maroc, économie expédition"
+        schema={schema}
+      />
       <PublicHeader />
 
       {/* Animated Background with Bubbles */}

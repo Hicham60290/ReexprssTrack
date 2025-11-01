@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { ChevronDown, Search, HelpCircle, MessageCircle, Sparkles } from 'lucide-react'
 import { Input } from '@/shared/components/ui/Input'
 import { Link } from 'react-router-dom'
 import PublicHeader from '../components/PublicHeader'
 import PublicFooter from '../components/PublicFooter'
+import SEO, { createFAQSchema, createBreadcrumbSchema } from '@/components/SEO'
 
 interface FAQItem {
   question: string
@@ -15,10 +16,6 @@ export default function FAQPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [expandedItems, setExpandedItems] = useState<number[]>([])
-
-  useEffect(() => {
-    document.title = 'FAQ - Questions fréquentes | ReExpressTrack'
-  }, [])
 
   const categories = [
     { id: 'all', name: 'Toutes', icon: '📚', gradient: 'from-blue-500 to-cyan-500' },
@@ -94,8 +91,25 @@ export default function FAQPage() {
     return matchesCategory && matchesSearch
   })
 
+  const schema = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      createFAQSchema(faqs),
+      createBreadcrumbSchema([
+        { name: 'Accueil', url: '/' },
+        { name: 'FAQ', url: '/faq' }
+      ])
+    ]
+  }
+
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
+      <SEO
+        title="FAQ - Questions Fréquentes"
+        description="Retrouvez les réponses aux questions fréquentes sur la réexpédition de colis vers les DOM-TOM et le Maroc : délais de livraison, tarifs, adresse française, suivi de colis, consolidation, et plus encore."
+        keywords="FAQ réexpédition, questions fréquentes livraison DOM-TOM, aide colis international, support réexpédition France, adresse française questions"
+        schema={schema}
+      />
       <PublicHeader />
 
       {/* Animated Background with Bubbles */}
