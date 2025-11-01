@@ -6,12 +6,27 @@ import { NotFoundError, BadRequestError } from '@common/errors/custom-errors.js'
 import type { CreateQuoteInput, AcceptQuoteInput, ListQuotesQuery, CarrierOption } from './quotes.schemas.js';
 import PDFDocument from 'pdfkit';
 import { Readable } from 'stream';
+import emailService from '@services/email.service.js';
+import { config } from '@config/index.js';
 
 export class QuotesService {
   /**
    * Create new quote with carrier options
    */
   async createQuote(userId: string, data: CreateQuoteInput) {
+    // Get user with profile and email preferences
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        profile: true,
+        emailPreference: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
     // Verify all packages belong to user and are eligible for quote
     const packages = await prisma.package.findMany({
       where: {
@@ -80,6 +95,21 @@ export class QuotesService {
       message: `Your shipping quote for ${packages.length} package(s) is ready. Total: €${totalAmount.toFixed(2)}`,
       link: `/quotes/${quote.id}`,
     });
+
+    // Send email if user has enabled quote notifications
+    if (user.emailPreference?.quoteCreated) {
+      const destination = typeof data.destinationAddress === 'object' && 'territory' in data.destinationAddress
+        ? data.destinationAddress.territory
+        : 'Votre destination';
+
+      await emailService.sendQuoteCreatedEmail(user.email, {
+        firstName: user.profile?.firstName || '',
+        quoteId: quote.id,
+        destination,
+        amount: totalAmount,
+        quoteLink: `${config.frontend.url}/quotes/${quote.id}`,
+      });
+    }
 
     // Log creation
     await prisma.auditLog.create({

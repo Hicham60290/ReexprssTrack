@@ -6,6 +6,7 @@ import { config } from '@config/index.js';
 import { UnauthorizedError, ConflictError, NotFoundError } from '@common/errors/custom-errors.js';
 import type { LoginInput, RegisterInput } from './auth.schemas.js';
 import jwt from 'jsonwebtoken';
+import emailService from '@services/email.service.js';
 
 export class AuthService {
   /**
@@ -65,17 +66,19 @@ export class AuthService {
       3600 * 24 // 24 hours
     );
 
-    // Send verification email
-    await queueService.sendEmail({
-      to: user.email,
-      subject: 'Verify your ReExpressTrack account',
-      html: `
-        <h1>Welcome to ReExpressTrack!</h1>
-        <p>Please verify your email address by clicking the link below:</p>
-        <a href="${config.frontend.url}/verify-email?token=${verificationToken}">Verify Email</a>
-        <p>This link will expire in 24 hours.</p>
-      `,
+    // Send welcome email
+    await emailService.sendWelcomeEmail(user.email, {
+      firstName: user.profile?.firstName || '',
+      email: user.email,
     });
+
+    // Send email verification
+    const verificationLink = `${config.frontend.url}/verify-email?token=${verificationToken}`;
+    await emailService.sendEmailVerification(
+      user.email,
+      verificationLink,
+      user.profile?.firstName || ''
+    );
 
     // Generate tokens
     const tokens = await this.generateTokens(user.id, user.email, user.role);
@@ -246,6 +249,9 @@ export class AuthService {
   async forgotPassword(email: string) {
     const user = await prisma.user.findUnique({
       where: { email },
+      include: {
+        profile: true,
+      },
     });
 
     // Always return success to prevent email enumeration
@@ -261,17 +267,12 @@ export class AuthService {
       3600 // 1 hour
     );
 
-    // Send reset email
-    await queueService.sendEmail({
-      to: user.email,
-      subject: 'Reset your ReExpressTrack password',
-      html: `
-        <h1>Password Reset Request</h1>
-        <p>Click the link below to reset your password:</p>
-        <a href="${config.frontend.url}/reset-password?token=${resetToken}">Reset Password</a>
-        <p>This link will expire in 1 hour.</p>
-        <p>If you didn't request this, please ignore this email.</p>
-      `,
+    // Send password reset email
+    const resetLink = `${config.frontend.url}/reset-password?token=${resetToken}`;
+    await emailService.sendPasswordReset(user.email, {
+      firstName: user.profile?.firstName || '',
+      resetLink,
+      expiresIn: '1 heure',
     });
 
     return { success: true };

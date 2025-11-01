@@ -11,6 +11,8 @@ import type {
   ListPaymentsAdminQuery,
   ListAuditLogsQuery,
 } from './admin.schemas.js';
+import emailService from '@services/email.service.js';
+import { config } from '@config/index.js';
 
 export class AdminService {
   /**
@@ -341,9 +343,33 @@ export class AdminService {
    * Update package status
    */
   async updatePackageStatus(adminId: string, packageId: string, data: UpdatePackageStatusInput) {
+    // Get package with user info before update
+    const oldPkg = await prisma.package.findUnique({
+      where: { id: packageId },
+      include: {
+        user: {
+          include: {
+            profile: true,
+            emailPreference: true,
+          },
+        },
+      },
+    });
+
+    if (!oldPkg) {
+      throw new NotFoundError('Package not found');
+    }
+
+    const oldStatus = oldPkg.status;
+
+    // Update package status
     const pkg = await prisma.package.update({
       where: { id: packageId },
-      data: { status: data.status },
+      data: {
+        status: data.status,
+        // Set receivedAt timestamp if status is RECEIVED and not already set
+        ...(data.status === 'RECEIVED' && !oldPkg.receivedAt ? { receivedAt: new Date() } : {}),
+      },
     });
 
     // Log action
@@ -354,11 +380,44 @@ export class AdminService {
         resourceType: 'PACKAGE',
         resourceId: packageId,
         metadata: {
+          oldStatus,
           newStatus: data.status,
           notes: data.notes,
         },
       },
     });
+
+    // Send email notifications based on status change
+    const user = oldPkg.user;
+    const emailPrefs = user.emailPreference;
+    const trackingLink = `${config.frontend.url}/packages/${packageId}`;
+
+    // Send email notification based on new status
+    if (data.status === 'RECEIVED' && emailPrefs?.packageReceived) {
+      await emailService.sendPackageReceivedEmail(user.email, {
+        firstName: user.profile?.firstName || '',
+        trackingNumber: pkg.trackingNumber || '',
+        status: 'Reçu à notre entrepôt',
+        description: pkg.description || 'Votre colis',
+        trackingLink,
+      });
+    } else if (data.status === 'SHIPPED' && emailPrefs?.packageShipped) {
+      await emailService.sendPackageShippedEmail(user.email, {
+        firstName: user.profile?.firstName || '',
+        trackingNumber: pkg.trackingNumber || '',
+        status: 'Expédié',
+        description: pkg.description || 'Votre colis',
+        trackingLink,
+      });
+    } else if (data.status === 'DELIVERED' && emailPrefs?.packageDelivered) {
+      await emailService.sendPackageDeliveredEmail(user.email, {
+        firstName: user.profile?.firstName || '',
+        trackingNumber: pkg.trackingNumber || '',
+        status: 'Livré',
+        description: pkg.description || 'Votre colis',
+        trackingLink,
+      });
+    }
 
     return pkg;
   }
